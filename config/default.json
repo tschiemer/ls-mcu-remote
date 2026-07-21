@@ -4,61 +4,188 @@
     "port": 8000,
     "remotePort": 9000
   },
+  "banks": [
+    ["pb1","pb2","pb3","pb4","pb5","pb6","pb7","pb8","gm"],
+    ["pb9","pb10","pb11","pb12","pb13","pb14","pb15","pb16","gm"],
+    ["pb17","pb18","pb19","pb20","pb21","pb22","pb23","pb24","gm"],
+    ["pb25","pb26","pb27","pb28","pb29","pb30", null, null, "gm"],
+    ["chase", "fxSize", "fxSpeed", null, null, null, null,"gm","gm"]
+  ],
+
+  "buttonLayers": [{
+
+    "vpot_click_0": {
+      "fun": "clear"
+    },
+    "vpot_click_1": {
+      "fun": "rec"
+    },
+    "vpot_click_2": {
+      "fun": "find"
+    },
+    "vpot_click_3": {
+      "fun": "selectNext"
+    },
+    "vpot_click_4": {
+      "fun": "selectPrevious"
+    },
+    "vpot_click_5": {
+      "fun": null
+    },
+    "vpot_click_6": {
+      "fun": null
+    },
+    "vpot_click_7": {
+      "fun": "selectBank",
+      "target": 4
+    },
+
+    "rec_0": {
+      "fun": "executor",
+      "target": 0
+    },
+    "rec_1": {
+      "fun": "executor",
+      "target": 10
+    },
+    "rec_2": {
+      "fun": "executor",
+      "target": 20
+    },
+    "rec_3": {
+      "fun": "executor",
+      "target": 30
+    },
+    "rec_4": {
+      "fun": "executor",
+      "target": 40
+    },
+    "rec_5": {
+      "fun": "executor",
+      "target": 50
+    },
+    "rec_6": {
+      "fun": "executor",
+      "target": 60
+    },
+    "rec_7": {
+      "fun": "go"
+    },
+
+    "solo_0": {
+      "fun": "executor",
+      "target": 1
+    },
+    "solo_1": {
+      "fun": "executor",
+      "target": 11
+    },
+    "solo_2": {
+      "fun": "executor",
+      "target": 21
+    },
+    "solo_3": {
+      "fun": "executor",
+      "target": 31
+    },
+    "solo_4": {
+      "fun": "executor",
+      "target": 41
+    },
+    "solo_5": {
+      "fun": "executor",
+      "target": 51
+    },
+    "solo_6": {
+      "fun": "executor",
+      "target": 61
+    },
+    "solo_7": {
+      "fun": "previousCue"
+    },
+
+    "mute_0": {
+      "fun": "executor",
+      "target": 2
+    },
+    "mute_1": {
+      "fun": "executor",
+      "target": 12
+    },
+    "mute_2": {
+      "fun": "executor",
+      "target": 22
+    },
+    "mute_3": {
+      "fun": "executor",
+      "target": 32
+    },
+    "mute_4": {
+      "fun": "executor",
+      "target": 42
+    },
+    "mute_5": {
+      "fun": "executor",
+      "target": 52
+    },
+    "mute_6": {
+      "fun": "executor",
+      "target": 62
+    },
+    "mute_7": {
+      "fun": "release"
+    },
+
+    "sel_0": {
+      "fun": "select",
+      "target": 0
+    },
+    "sel_1": {
+      "fun": "select",
+      "target": 1
+    },
+    "sel_2": {
+      "fun": "select",
+      "target": 2
+    },
+    "sel_3": {
+      "fun": "select",
+      "target": 3
+    },
+    "sel_4": {
+      "fun": "select",
+      "target": 4
+    },
+    "sel_5": {
+      "fun": "select",
+      "target": 5
+    },
+    "sel_6": {
+      "fun": "select",
+      "target": 6
+    },
+    "sel_7": {
+      "fun": "select",
+      "target": 7
+    }
+  }
+  ],
   "devices": {
     "X-TOUCH_INT":
     {
 
-    "asdfportName": "X-TOUCH_INT",
+    "_comment": "the object* name is the midi port name which will be used to identify the device",
 
     "deviceType": 15,
 
-    "playbacks" : {
+    "banks" : {
       "fixed": false,
-      "offset": 0,
-      "linked": true
+      "offset": 0
     },
 
-    "buttons": [
-      {
-        "midiCc": 4,
-        "function": 0
-      }
-    ],
+    "buttonLayer_asdf": 0,
 
-    "vpots" : [
-      {
-        "encoder": "encoder1",
-        "btn": null
-      },
-      {
-        "encoder": "encoder2",
-        "btn": null
-      },
-      {
-        "encoder": "encoder3",
-        "btn": null
-      },
-      {
-        "encoder": "encoder4",
-        "btn": null
-      },
-      {
-        "encoder": null,
-        "btn": null
-      },
-      {
-        "encoder": "buttonLayer",
-        "btn": null
-      },
-      {
-        "encoder": "page",
-        "btn": null
-      },
-      {
-        "encoder": "bank",
-        "btn": "vpot_mode"
-      }
-    ]
+    "vpots" : ["encoder1", "encoder2", "encoder3", "encoder4", "select", "buttonLayer", "page", "bank"]
   }
 }
 }

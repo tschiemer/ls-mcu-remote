@@ -90,7 +90,7 @@ namespace LsMcuRemote {
         Rec,
 
         SelectedPlaybackGo,
-        SelectedPlaybackStop,
+        SelectedPlaybackRelease,
         SelectedPlaybackPreviousCue,
         SelectedPlaybackNextCue,
         SelectedPlaybackPause,
@@ -243,7 +243,7 @@ namespace LsMcuRemote {
      * $i       1 - 30
      * $pressed 1 (pressed), 0 (released)
      */
-    constexpr char kLsOscPlaybackStop_Int[] = "/LS/Stop/PB/%i";
+    constexpr char kLsOscPlaybackRelease_Int[] = "/LS/Stop/PB/%i";
 
     /**
      * "/LS/Prev/PB/$i $pressed"
@@ -283,7 +283,7 @@ namespace LsMcuRemote {
      * "/LS/Stop/Main $pressed"
      * $pressed 1 (pressed), 0 (released)
      */
-    constexpr char kLsOscSelectedPlaybackStop[] = "/LS/Stop/Main";
+    constexpr char kLsOscSelectedPlaybackRelease[] = "/LS/Stop/Main";
 
     /**
      * "/LS/Prev/Main $pressed"

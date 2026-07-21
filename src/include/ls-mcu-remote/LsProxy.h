@@ -67,7 +67,7 @@ namespace LsMcuRemote {
                 uint16_t lightsharkPort = kLsOscLsDefaultIncomingUdpPort;
                 uint16_t localPort = kLsOscLsDefaultOutgoingUdpPort;
 
-                std::chrono::milliseconds syncInterval = std::chrono::milliseconds(1000);
+                std::chrono::milliseconds syncInterval = std::chrono::milliseconds(250);
 
                 LsMcuRemote::SyncTypes synTypes = SyncTypes::All;
 
@@ -146,7 +146,7 @@ namespace LsMcuRemote {
 
             inline State state() { return state_; }
 
-            inline LsState lsState(){ return lsState_; }
+            inline LsState & lsState(){ return lsState_; }
 
             void start();
             void stop();

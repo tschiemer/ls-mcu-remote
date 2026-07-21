@@ -32,21 +32,76 @@
 
 
 // in case the feature set is not merged yet in the master branch
-#ifdef libremidi::remote_control_protocol::which_mixer_control_type
+#ifdef which_mixer_control_type
+
+
+using which_mixer_command_type = libremidi::remote_control_protocol::which_mixer_command_type;
+using which_mixer_command_index = libremidi::remote_control_protocol::which_mixer_command_index;
 
 using which_mixer_control_type = libremidi::remote_control_protocol::which_mixer_control_type;
 using which_mixer_control_index = libremidi::remote_control_protocol::which_mixer_control_index;
+
 using relative_midi_to_value = libremidi::remote_control_protocol::relative_midi_to_value;
 
 #else
 
+using mixer_command = libremidi::remote_control_protocol::mixer_command;
 using mixer_control = libremidi::remote_control_protocol::mixer_control;
+
+#define type_vpot_click vpot_click_0
+#define type_rec rec_0
+#define type_solo solo_0
+#define type_mute mute_0
+#define type_sel sel_0
+#define type_assign assign_track
+#define type_channel bank_left
+#define type_f f1
+#define type_page midi_tracks
+#define type_meta shift
+#define type_control save
+#define type_transport markers
+#define type_user user_switch_1
+#define type_fader_touched fader_touched_0
+#define type_leds smpte_led
+//#define type_other relay_click
+
+static mixer_command which_mixer_command_type(mixer_command cmd)
+{
+    if (mixer_command::vpot_click_0 <= cmd && cmd <= mixer_command::vpot_click_7) return mixer_command::type_vpot_click;
+    if (mixer_command::rec_0 <= cmd && cmd <= mixer_command::rec_7) return mixer_command::type_rec;
+    if (mixer_command::solo_0 <= cmd && cmd <= mixer_command::solo_7) return mixer_command::type_solo;
+    if (mixer_command::mute_0 <= cmd && cmd <= mixer_command::mute_7) return mixer_command::type_mute;
+    if (mixer_command::sel_0 <= cmd && cmd <= mixer_command::sel_7) return mixer_command::type_sel;
+    if (mixer_command::assign_track <= cmd && cmd <= mixer_command::assign_instrument) return mixer_command::type_assign;
+    if (mixer_command::bank_left <= cmd && cmd <= mixer_command::global) return mixer_command::type_channel;
+    if (mixer_command::f1 <= cmd && cmd <= mixer_command::f8) return mixer_command::type_f;
+    if (mixer_command::midi_tracks <= cmd && cmd <= mixer_command::user) return mixer_command::type_page;
+    if (mixer_command::shift <= cmd && cmd <= mixer_command::alt) return mixer_command::type_meta;
+    if (mixer_command::save <= cmd && cmd <= mixer_command::enter) return mixer_command::type_control;
+    if (mixer_command::markers <= cmd && cmd <= mixer_command::scrub) return mixer_command::type_transport;
+    if (mixer_command::user_switch_1 <= cmd && cmd <= mixer_command::user_switch_2) return mixer_command::type_user;
+    if (mixer_command::fader_touched_0 <= cmd && cmd <= mixer_command::fader_touched_master) return mixer_command::type_fader_touched;
+    if (mixer_command::smpte_led <= cmd && cmd <= mixer_command::rude_solo_led) return mixer_command::type_leds;
+
+    return mixer_command::relay_click;
+}
+
+inline static mixer_command which_mixer_command_type(uint8_t cmd_byte){
+    return which_mixer_command_type(static_cast<mixer_command>(cmd_byte));
+}
+
+inline static int which_mixer_command_index(mixer_command type, mixer_command cmd){
+    return (uint8_t)cmd - (uint8_t)type;
+}
+inline static int which_mixer_command_index(mixer_command type, uint8_t cmd_byte){
+    return which_mixer_command_index(type, static_cast<mixer_command>(cmd_byte));
+}
 
 #define type_vpot_rotation vpot_rotation_0
 #define type_vpot_led vpot_led_0
 #define type_timecode_digit timecode_digit_0
 #define type_assignment_digit assignment_digit_0
-#define type_other external_control
+//#define type_other external_control
 
 static mixer_control which_mixer_control_type(mixer_control ctl)
 {
@@ -55,7 +110,7 @@ static mixer_control which_mixer_control_type(mixer_control ctl)
     if (mixer_control::timecode_digit_0 <= ctl && ctl <= mixer_control::timecode_digit_9) return mixer_control::type_timecode_digit;
     if (mixer_control::assignment_digit_0 <= ctl && ctl <= mixer_control::assignment_digit_1) return mixer_control::type_assignment_digit;
 
-    return mixer_control::type_other;
+    return mixer_control::external_control;
 }
 
 static inline int which_mixer_control_index(mixer_control type, mixer_control ctl)
@@ -97,34 +152,582 @@ namespace LsMcuRemote {
 //        MIDIClientDispose(handle);
 //    }
 
+    void Controller::MidiDevice::init(){
+
+        for(int i = 0; i < EF_COUNT; i++)
+            encoderFunctionLUT_[i] = -1;
+
+        for(int i = 0; i < vpots.size(); i++)
+            encoderFunctionLUT_[vpots[i]] = i;
+    }
+
+    void Controller::MidiDevice::start(){
+
+        // only start when in/out ports are open
+        if (!midiInRef_->is_port_open() || !midiOutRef_->is_port_open())
+            return;
+
+        mcuRef_->start();
+
+        new std::thread([&]{
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            mcuRef_->reset();
+            mcuRef_->all_leds_off();
+
+
+
+            updateTrackColors();
+
+
+            updateVPotLcd();
+
+            updatePbLcd();
+            updatePbLevels();
+
+            updateVPotLeds();
+        });
+    }
+
+    void Controller::MidiDevice::stop(){
+        // go offline?
+//        mcuRef_->
+    }
+
+
+    void Controller::MidiDevice::updateVPotLed(int i){
+
+        static char cmdLUT[8][13] = {
+                "vpot_click_0",
+                "vpot_click_1",
+                "vpot_click_2",
+                "vpot_click_3",
+                "vpot_click_4",
+                "vpot_click_5",
+                "vpot_click_6",
+                "vpot_click_7"
+        };
+        static MCU::mixer_control mcLUT[8] = {
+                MCU::mixer_control::vpot_led_0,
+                MCU::mixer_control::vpot_led_1,
+                MCU::mixer_control::vpot_led_2,
+                MCU::mixer_control::vpot_led_3,
+                MCU::mixer_control::vpot_led_4,
+                MCU::mixer_control::vpot_led_5,
+                MCU::mixer_control::vpot_led_6,
+                MCU::mixer_control::vpot_led_7,
+        };
+
+        ButtonAction action;
+        EncoderFunction encoderFunction = vpots[i];
+
+        if (currentButtonLayer().contains(cmdLUT[i]))
+            action = currentButtonLayer().at(cmdLUT[i]);
+
+
+        int ledMode = 0;
+
+        switch(encoderFunction){
+            case EFGrandmaster:
+            {
+                int value = lsStateRef_->grandmasterLevel * 11 / 255;
+                ledMode = (int)MCU::led_ring_mode::mode_2 | value; // fill from left to right
+            }
+                break;
+
+            case EFSmChase:
+            {
+                int value = lsStateRef_->chaseSpeedMasterLevel * 11 / 255;
+                ledMode = (int)MCU::led_ring_mode::mode_2 | value; // fill from left to right
+            }
+                break;
+
+            case EFSmFxSize:
+            {
+                int value = lsStateRef_->fxSizeMasterLevel * 11 / 255;
+                ledMode = (int)MCU::led_ring_mode::mode_2 | value; // fill from left to right
+            }
+                break;
+
+            case EFSmFxSpeed:
+            {
+                int value = lsStateRef_->fxSpeedMasterLevel * 11 / 255;
+                ledMode = (int)MCU::led_ring_mode::mode_2 | value; // fill from left to right
+            }
+                break;
+
+            case EFEncoder1:
+            case EFEncoder2:
+            case EFEncoder3:
+            case EFEncoder4:
+                ledMode = (int)MCU::led_ring_mode::mode_0 | 6; // single center led
+                break;
+
+            case EFBank:
+            case EFPage:
+            case EFSelect:
+
+//                    ledMode = (int)MCU::led_ring_mode::mode_3 | 2; // three center leds
+                break;
+
+            default:
+                // nothing
+                break;
+        }
+
+//        switch(action.fun){
+//            case ButtonFunction::BFNone:
+//                // do not light up at all
+//                break;
+//
+//            case ButtonFunction::BFClear:
+//            case ButtonFunction::BFDBO:
+//                // mark as dangerous
+////                    ledMode |= (int)MCU::led_ring_mode::mode_3 | 6;
+//                ledMode |= 0b01000000;
+//                break;
+//
+//            default:
+//
+//        }
+
+
+//            mixer_control mc = (mixer_control)((int)MCU::mixer_control::vpot_led_0 + i);
+        mcuRef_->control(mcLUT[i], ledMode);
+    }
+
+    void Controller::MidiDevice::updateVPotLeds(){
+
+        for (int i = 0; i < vpots.size(); i++)
+            updateVPotLed(i);
+    }
+
+    void Controller::MidiDevice::updateTrackColors(){
+        //TODO
+    }
+    void Controller::MidiDevice::updateTrackColor(int i, int color){
+        //TODO
+    }
+
+    void Controller::MidiDevice::updateVPotLcd(){
+
+        for(int i = 0; i < vpots.size(); i++)
+            updateVPotLcd(i);
+
+    }
+
+    void Controller::MidiDevice::updateVPotLcd(int i){
+
+        char lcd[8] = {0,0,0,0,0,0,0,0};
+
+        int l = 0;
+        switch(vpots[i]){
+            case EFEncoder1:
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 1");
+                break;
+            case EFEncoder2:
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 2");
+                break;
+            case EFEncoder3:
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 3");
+                break;
+            case EFEncoder4:
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 4");
+                break;
+            case EFGrandmaster:
+                l = std::snprintf(lcd, sizeof(lcd), "GM");
+                break;
+            case EFSmChase:
+                l = std::snprintf(lcd, sizeof(lcd), "Chase");
+                break;
+            case EFSmFxSize:
+                l = std::snprintf(lcd, sizeof(lcd), "FxSize");
+                break;
+            case EFSmFxSpeed:
+                l = std::snprintf(lcd, sizeof(lcd), "FxSpeed");
+                break;
+            case EFSelect:
+                l = std::snprintf(lcd, sizeof(lcd), "Select");
+                break;
+            case EFButtonLayer:
+                l = std::snprintf(lcd, sizeof(lcd), "Layer %i", buttonLayer + 1);
+                break;
+            case EFBank:
+                l = std::snprintf(lcd, sizeof(lcd), "Bank %i", banks.current_ + 1);
+                break;
+            case EFPage:
+                l = std::snprintf(lcd, sizeof(lcd), "Page %i", lsStateRef_->page);
+                break;
+            case EFNone:
+                break;
+        }
+
+//        std::cerr << "VPot " << i << " LCD: " << lcd << std::endl;
+
+        mcuRef_->update_lcd(lcd, i*7);
+    }
+
+
+    void Controller::MidiDevice::updatePbLcd(){
+
+        for(int i = 0; i < 8; i++)
+            updatePbLcd(i);
+
+    }
+
+    void Controller::MidiDevice::updatePbLcd(int i){
+
+        char lcd[8]= {0,0,0,0,0,0,0,0};
+
+        BankLayout & bank = sharedBanks_->at(banks.current_);
+
+        int l=0;
+
+        switch(bank[i]){
+            case PlaybackId::PINone:
+                break;
+            case PlaybackId::PIGm:
+                l = std::snprintf(lcd, sizeof(lcd), "GM");
+                break;
+            case PlaybackId::PISmChase:
+                l = std::snprintf(lcd, sizeof(lcd), "Chase");
+                break;
+            case PlaybackId::PISmFxSize:
+                l = std::snprintf(lcd, sizeof(lcd), "FxSize");
+                break;
+            case PlaybackId::PISmFxSpeed:
+                l = std::snprintf(lcd, sizeof(lcd), "FxSpeed");
+                break;
+            default:
+            {
+
+                int pi = (int)bank[i];
+
+                // Id -> pretty index
+                int index = pi + 1;
+
+                char activeOnPage[5] = "";
+
+                if (lsStateRef_->playbacks[pi].is_active)
+                    std::memcpy(activeOnPage, "*", 2);
+
+                // well, LS does not provide this info, so this is rather guessed...
+//                        std::snprintf(activeOnPage, sizeof(activeOnPage), "%2d", lsStateRef_->playbacks[pi].page+1);
+
+                l = std::snprintf(lcd, sizeof(lcd), "Pb%2i %2s", index, activeOnPage);
+            }
+
+        }
+
+//        std::cerr << "Pb " << i << " LCD: " << lcd << std::endl;
+
+        mcuRef_->update_lcd(lcd, 56 + i*7);
+    }
+
+
+    void Controller::MidiDevice::updatePbLevels(){
+
+        BankLayout & bank = currentBank();
+
+        for(int i = 0; i < bank.size(); i++){
+
+            PlaybackId pid = bank[i];
+
+
+            int level = 0;
+
+            if (pid == PlaybackId::PIGm) {
+                level = lsStateRef_->grandmasterLevel;
+            } else if (pid == PlaybackId::PISmChase) {
+                level = lsStateRef_->chaseSpeedMasterLevel;
+            } else if (pid == PlaybackId::PISmFxSize) {
+                level = lsStateRef_->fxSizeMasterLevel;
+            } else if (pid == PlaybackId::PISmFxSpeed) {
+                level = lsStateRef_->fxSpeedMasterLevel;
+            }
+            else if (pid != PlaybackId::PINone){
+                level = lsStateRef_->playbacks[static_cast<int>(pid)].level;
+            }
+
+//            std::cerr << "fader[" << i << "] " << (int)pid << " = " << level << std::endl;
+
+            // 8-bit -> 14-bit
+            level <<= 6;
+
+            mcuRef_->fader(static_cast<libremidi::remote_control_protocol::fader>(i), level);
+        }
+
+        // possibly there is a level encoder
+        updateVPotLeds();
+    }
+
+    void Controller::MidiDevice::updatePbLevel(PlaybackId pid, int level){
+
+
+
+        int i = lookupFaderIndex(pid);
+
+        if (i > -1){
+
+            //8-bit -> 14-bit
+            int faderLevel = level << 6;
+
+            mcuRef_->fader((MCU::fader)i, faderLevel);
+
+            // possibly is now active
+            updatePbLcd(i);
+        }
+
+
+        i = lookupVPotIndex(pid);
+
+        if (i > -1){
+            updateVPotLed(i);
+        }
+
+//        std::cerr << "pid " << (int)pid << std::endl;
+
+    }
+
+    void Controller::MidiDevice::gotoBank(int bank){
+        // ignore command if not supposed to change
+        if (banks.fixed)
+            return;
+
+        // range sanity check
+        if (bank < 0 | sharedBanks_->size() <= bank)
+            return;
+
+        // if going to current bank, go to last instead
+        // this allows for popping to a specific bank and going back again ;)
+        if (banks.current_ == bank){
+            banks.current_ = banks.previous_;
+            banks.previous_ = bank;
+        } else {
+            banks.previous_ = banks.current_;
+            banks.current_ = bank;
+        }
+
+
+        int i = lookupVPotIndex(EFBank);
+
+        if (i > -1) {
+            updateVPotLed(i);
+            updateVPotLcd(i);
+        }
+
+        updateTrackColors();
+        updatePbLcd();
+        updatePbLevels();
+    }
+
+    void Controller::MidiDevice::changeBank(int upOrDown){
+        // ignore command if not supposed to change
+//        if (banks.fixed)
+//            return;
+
+        int target = banks.current_ + upOrDown;
+
+        gotoBank(target);
+    }
+
+
+    int Controller::MidiDevice::lookupFaderIndex(PlaybackId pid){
+
+        BankLayout & bank = currentBank();
+
+        for(int i = 0; i < bank.size(); i++){
+            if (bank[i] == pid)
+                return i;
+        }
+
+        return -1;
+    }
+    int Controller::MidiDevice::lookupVPotIndex(PlaybackId pid){
+
+        switch(pid){
+            case PlaybackId::PIGm:
+                return lookupVPotIndex(EFGrandmaster);
+
+            case PlaybackId::PISmChase:
+                return lookupVPotIndex(EFSmChase);
+
+            case PlaybackId::PISmFxSize:
+                return lookupVPotIndex(EFSmFxSize);
+
+            case PlaybackId::PISmFxSpeed:
+                return lookupVPotIndex(EFSmFxSpeed);
+
+            default:
+                return -1;
+        }
+    }
+
+    Controller::MidiDevice::ButtonAction & Controller::MidiDevice::lookupButtonAction(MCU::mixer_command cmd){
+
+        static ButtonAction NoAction{.fun = BFNone};
+
+        const char * lookup = nullptr;
+
+        // let's make life a bit easier with these enum key -> string lookups
+#define E_TO_STR(key) \
+    case mixer_command::key: \
+        lookup = #key; \
+        break;
+#define E_to_STR_0_7(key) \
+    E_TO_STR(key ## _0)       \
+    E_TO_STR(key ## _1)       \
+    E_TO_STR(key ## _2)       \
+    E_TO_STR(key ## _3)       \
+    E_TO_STR(key ## _4)       \
+    E_TO_STR(key ## _5)       \
+    E_TO_STR(key ## _6)       \
+    E_TO_STR(key ## _7)
+
+        switch (cmd){
+            E_to_STR_0_7(sel)
+            E_to_STR_0_7(mute)
+            E_to_STR_0_7(rec)
+            E_to_STR_0_7(solo)
+            E_to_STR_0_7(vpot_click)
+
+            E_TO_STR(assign_track)
+            E_TO_STR(assign_send)
+            E_TO_STR(assign_pan)
+            E_TO_STR(assign_plugin)
+            E_TO_STR(assign_eq)
+            E_TO_STR(assign_instrument)
+
+            E_TO_STR(bank_left)
+            E_TO_STR(bank_right)
+            E_TO_STR(channel_left)
+            E_TO_STR(channel_right)
+            E_TO_STR(flip)
+            E_TO_STR(global)
+
+            E_TO_STR(name_value_button)
+            E_TO_STR(smpte_beats_button)
+
+            E_TO_STR(f1)
+            E_TO_STR(f2)
+            E_TO_STR(f3)
+            E_TO_STR(f4)
+            E_TO_STR(f5)
+            E_TO_STR(f6)
+            E_TO_STR(f7)
+            E_TO_STR(f8)
+
+            E_TO_STR(midi_tracks)
+            E_TO_STR(inputs)
+            E_TO_STR(audio_tracks)
+            E_TO_STR(audio_instruments)
+            E_TO_STR(aux)
+            E_TO_STR(busses)
+            E_TO_STR(outputs)
+            E_TO_STR(user)
+
+            E_TO_STR(shift)
+            E_TO_STR(option)
+            E_TO_STR(control)
+            E_TO_STR(alt)
+
+            E_TO_STR(save)
+            E_TO_STR(undo)
+            E_TO_STR(cancel)
+            E_TO_STR(enter)
+
+            E_TO_STR(markers)
+            E_TO_STR(nudge)
+            E_TO_STR(cycle)
+            E_TO_STR(drop)
+            E_TO_STR(replace)
+            E_TO_STR(click)
+            E_TO_STR(solo)
+
+            E_TO_STR(rewind)
+            E_TO_STR(forward)
+            E_TO_STR(stop)
+            E_TO_STR(play)
+            E_TO_STR(record)
+
+            E_TO_STR(up)
+            E_TO_STR(down)
+            E_TO_STR(left)
+            E_TO_STR(right)
+            E_TO_STR(zoom)
+            E_TO_STR(scrub)
+
+            E_TO_STR(user_switch_1)
+            E_TO_STR(user_switch_2)
+
+            default:
+                break;
+        }
+
+#undef E_to_STR_0_7
+#undef E_TO_STR
+
+        if (lookup && sharedButtonLayers_->at(buttonLayer).contains(lookup))
+            return sharedButtonLayers_->at(buttonLayer).at(lookup);
+
+        return NoAction;
+    }
+
     void Controller::initLsProxy(){
 
         lsProxy_.configure({
            .lightsharkHostIp = data_.lightshark.ip,
            .lightsharkPort = data_.lightshark.port,
            .localPort = data_.lightshark.remotePort,
-//                .syncInterval = LsProxy::NoAutoSync
+//                .syncInterval = LsProxy::NoAutoSync,
 //                .syncInterval = std::chrono::milliseconds(500),
            .onGrandmasterSync = [&](PlaybackLevel_t level){
                if (state_ != State::Running)
                    return;
 
-               // do nothing at the moment
+               lsDeviceFader(MidiDevice::PlaybackId::PIGm, level);
            },
            .onSubmasterSync = [&](Submasters sm, PlaybackLevel_t level){
 
                if (state_ != State::Running)
                    return;
+
+
+               MidiDevice::PlaybackId pid = MidiDevice::PlaybackId::PINone;
+
+               switch(sm){
+                   case Submasters::ChaseSpeedMaster:
+                       pid = MidiDevice::PlaybackId::PISmChase;
+                       break;
+                   case Submasters::FxSpeedMaster:
+                       pid = MidiDevice::PlaybackId::PISmFxSpeed;
+                       break;
+                   case Submasters::FxSizeMaster:
+                       pid = MidiDevice::PlaybackId::PISmFxSize;
+                       break;
+               }
+
+               lsDeviceFader(pid, level);
            },
            .onPageSync = [&](int page){
 
                if (state_ != State::Running)
                    return;
+
+                lsPageChange();
            },
            .onPlaybackSync = [&](int pb, PlaybackLevel_t level, bool is_active){
 
                if (state_ != State::Running)
                    return;
+
+               MidiDevice::PlaybackId pid = (MidiDevice::PlaybackId)(pb);
+
+//               std::cout << "pb sync " << pb << " " << (int)level << " " << is_active << std::endl;
+
+               lsDeviceFader(pid, level);
+
            },
            .onExecutorSync = [&](int page, int col, int row, bool is_active){
 
@@ -149,43 +752,93 @@ namespace LsMcuRemote {
 
     void Controller::initMidiDevices(){
 
-//        std::cerr << "initMidiDevices()" << std::endl;
-//        std::cerr << "Controller ptr " << this << std::endl;
+//        std::shared_ptr<MidiDevice::BankLayoutSet> sharedBanks = std::make_shared<MidiDevice::BankLayoutSet>(data_.banks);
+//        std::shared_ptr<MidiDevice::ButtonLayerSet> sharedButtonLayers = std::make_shared<MidiDevice::ButtonLayerSet>(data_.buttonLayers);
 
-        for(auto && [portName, midiDevice] : data_.devices){
+        for(auto & [portName, midiDevice] : data_.devices){
 
-//            midiDevice.controller_ = shared_from;
+            midiDevice.init();
 
-            midiDevice.midiIn_ = std::make_shared<libremidi::midi_in>(libremidi::midi_in{{
+            midiDevice.lsStateRef_ = &lsProxy_.lsState();
+            midiDevice.sharedBanks_ = &data_.banks;
+            midiDevice.sharedButtonLayers_ = &data_.buttonLayers;
+
+//            midiDevice.sharedBanks_ = sharedBanks;
+//            midiDevice.sharedButtonLayers_ = std::make_shared<MidiDevice::ButtonLayerSet>(data_.buttonLayers);
+
+            midiDevice.banks.current_ = midiDevice.banks.offset;
+
+
+            // midi in port
+            midiDevice.midiInRef_ = new libremidi::midi_in{{
                  .on_message = [&](const libremidi::message& message) {
 
-                     std::cerr << "in " << message.size() << std::endl;
+//                     std::cerr << "in " << message.size() << std::endl;
+
                          if (state_ == State::Running) {
-                             midiDevice.mcu_->on_midi(message);
+                             midiDevice.mcuRef_->on_midi(message);
                          }
                      }
-             }});
+             }};
 
-            midiDevice.midiOut_ = std::make_shared<libremidi::midi_out>();
+            // midi out port
+            midiDevice.midiOutRef_ = new libremidi::midi_out();
 
-            midiDevice.mcu_ = std::make_shared<libremidi::remote_control_processor>(libremidi::remote_control_processor{
+            // midi MCU processor
+            midiDevice.mcuRef_ = new libremidi::remote_control_processor{
                     {
 //                device_type = midiDevice.deviceType;
                             .midi_out = [&](libremidi::message &&msg) {
-                                if (state_ == State::Running && midiDevice.midiOut_->is_port_open())
-                                    midiDevice.midiOut_->send_message(msg);
+                                if (state_ == State::Running && midiDevice.midiOutRef_->is_port_open())
+                                    midiDevice.midiOutRef_->send_message(msg);
                             },
                             .on_command = [&](libremidi::remote_control_protocol::mixer_command cmd, bool pressed) {
+
+//                                std::cerr << "command: " <<(int)cmd << " -> " << (pressed ? "pressed" : "released") << "\n";
+
                                 if (state_ != State::Running)
                                     return;
 
-                                std::cerr << "command: " <<(int)cmd << " -> " << (pressed ? "pressed" : "released") << "\n";
+
+                                auto type = which_mixer_command_type(cmd);
+                                auto index = which_mixer_command_index(type, cmd);
+
+                                switch (type){
+                                    case mixer_command::type_fader_touched:
+                                    {
+                                        // only interested in fader release
+                                        if (pressed)
+                                            return;
+
+                                        MidiDevice::PlaybackId pid = midiDevice.lookupPlaybackId(index);
+
+                                        // ignore if fader not assigned
+                                        if (pid == MidiDevice::PlaybackId::PINone)
+                                            return;
+
+                                        MCU::fader fader = (MCU::fader)((int)libremidi::remote_control_protocol::fader::fader_0 + index);
+
+                                        midiDevice.mcuRef_->fader(fader, midiDevice.faderLevels_[index]);
+                                    }
+                                        break;
+
+                                    default:
+                                    {
+                                        MidiDevice::ButtonAction btn = midiDevice.lookupButtonAction(cmd);
+
+                                        bool feedback = midiDeviceButton(midiDevice, btn, pressed);
+
+                                        if (feedback)
+                                            midiDevice.mcuRef_->command(cmd, pressed);
+                                    }
+                                        break;
+                                }
                             },
                             .on_control = [&](libremidi::remote_control_protocol::mixer_control ctl, int v) {
                                 if (state_ != State::Running)
                                     return;
 
-                                std::cerr << "control: " << (int)ctl << " -> " << v << "\n";
+//                                std::cerr << "control: " << (int)ctl << " -> " << v << "\n";
 
                                 auto type = which_mixer_control_type(ctl);
                                 auto index = which_mixer_control_index(type, ctl);
@@ -194,7 +847,7 @@ namespace LsMcuRemote {
                                     case mixer_control::type_vpot_rotation:
                                         {
                                             int rvalue = relative_midi_to_value(v);
-                                            midiDeviceEncoder(midiDevice, midiDevice.vpots[index].encoder, rvalue);
+                                            midiDeviceEncoder(midiDevice, midiDevice.vpots[index], rvalue);
                                         }
                                         break;
                                     default:
@@ -207,13 +860,20 @@ namespace LsMcuRemote {
                                 if (state_ != State::Running)
                                     return;
 
-                                std::cerr << "fader: " << (int) fader << " -> " << level << "\n";
+//                                std::cerr << "fader: " << (int) fader << " -> " << level << "\n";
 
+                                MidiDevice::PlaybackId pid = midiDevice.lookupPlaybackId((int)fader);
 
+                                // ignore if fader not used
+                                if (pid == MidiDevice::PlaybackId::PINone)
+                                    return;
+
+                                midiDevice.faderLevels_[(int)fader] = level;
+
+                                midiDeviceFader(midiDevice, pid, level);
                             }
                     }
-            });
-            std::cerr << "midiDevice ptr " << midiDevice.mcu_ << std::endl;
+            };
         }
 
     }
@@ -221,12 +881,11 @@ namespace LsMcuRemote {
     void Controller::deinitMidiDevices(){
 
         for(auto &[portName,midiDevice] : data_.devices){
-//            midiDevice.controller_ = nullptr;
 
-//            if (midiDevice.mcu_){
-//                delete midiDevice.mcu_;
-//                midiDevice.mcu_ = nullptr;
-//            }
+            delete midiDevice.mcuRef_;
+            delete midiDevice.midiOutRef_;
+            delete midiDevice.midiInRef_;
+            delete midiDevice.lsStateRef_;
         }
     }
 
@@ -234,7 +893,7 @@ namespace LsMcuRemote {
 
         midiObserver_ = std::make_shared<libremidi::observer>(libremidi::observer({
             .input_added = [&](const libremidi::input_port& p){
-                std::cout << "input added " << p.port_name << std::endl;
+                std::cerr << "MIDI input found " << p.port_name << std::endl;
 
                 if (!data_.devices.contains(p.port_name))
                     return;
@@ -243,31 +902,26 @@ namespace LsMcuRemote {
 
                 //Q what happens when multiple devices have the same port name, is that possible even in libremidi?
 
-                if (device.midiIn_->is_port_open())
-                    device.midiIn_->close_port();
+                if (device.midiInRef_->is_port_open())
+                    device.midiInRef_->close_port();
 
-                device.midiIn_->open_port(p);
+                device.midiInRef_->open_port(p);
 
-                std::cout << "opened " << p.port_name << std::endl;
-
-                std::cout << "mcu @ " << device.mcu_ << std::endl;
-
-                if (device.midiOut_->is_port_open())
-                    device.mcu_->start();
+                device.start();
             },
             .input_removed = [&](const libremidi::input_port& p){
-                std::cout << "input removed " << p.port_name << std::endl;
+                std::cerr << "MIDI input lost " << p.port_name << std::endl;
 
                 if (!data_.devices.contains(p.port_name))
                     return;
 
                 MidiDevice &device = data_.devices.at(p.port_name);
 
-                if (device.midiIn_->is_port_open())
-                    device.midiIn_->close_port();
+                if (device.midiInRef_->is_port_open())
+                    device.midiInRef_->close_port();
             },
             .output_added = [&](const libremidi::output_port& p){
-                std::cout << "output added " << p.port_name << std::endl;
+                std::cerr << "MIDI output found " << p.port_name << std::endl;
 
                 if (!data_.devices.contains(p.port_name))
                     return;
@@ -276,28 +930,23 @@ namespace LsMcuRemote {
 
                 //Q what happens when multiple devices have the same port name, is that possible even in libremidi?
 
-                if (device.midiOut_->is_port_open())
-                    device.midiOut_->close_port();
+                if (device.midiOutRef_->is_port_open())
+                    device.midiOutRef_->close_port();
 
-                device.midiOut_->open_port(p);
+                device.midiOutRef_->open_port(p);
 
-                std::cout << "opened " << p.port_name << std::endl;
-
-                std::cout << "mcu @ " << device.mcu_ << std::endl;
-
-                if (device.midiIn_->is_port_open())
-                    device.mcu_->start();
+                device.start();
             },
             .output_removed = [&](const libremidi::output_port& p){
-                std::cout << "output removed " << p.port_name << std::endl;
+                std::cerr << "MIDI output lost " << p.port_name << std::endl;
 
                 if (!data_.devices.contains(p.port_name))
                     return;
 
                 MidiDevice &device = data_.devices.at(p.port_name);
 
-                if (device.midiOut_->is_port_open())
-                    device.midiOut_->close_port();
+                if (device.midiOutRef_->is_port_open())
+                    device.midiOutRef_->close_port();
             }
     }));
     }
@@ -328,6 +977,9 @@ namespace LsMcuRemote {
         for(auto & [portName, midiDevice] : data_.devices){
             if (midiDevice.vpots.size() != 8)
                 throw new std::invalid_argument("configured vpot array must have 8 elements");
+
+            if (midiDevice.banks.offset >= data_.banks.size())
+                throw new std::invalid_argument("pb bank offset higher than actual bank count");
         }
 
 
@@ -367,6 +1019,22 @@ namespace LsMcuRemote {
         if (state_ != State::Running)
             throw new std::runtime_error("Controller not started");
 
+//        std::thread test([&]{
+//            while(1){
+//                std::this_thread::sleep_for(std::chrono::seconds(2));
+//
+//                std::cout << "> page " << lsProxy_.lsState().page << std::endl;
+////                std::cout << "pb 1 level " << (int)lsProxy_.lsState().playbacks[0].level << std::endl;
+//
+////                for(auto & [key, dev] : data_.devices){
+////
+////                    std::cout << key << "-pb 1 level " << (int)dev.lsStateRef_->playbacks[0].level << std::endl;
+////                    std::cout << key << "-pb 1 level " << (int)dev.sharedLsState_->playbacks[0].level << std::endl;
+////                }
+//
+//            }
+//        });
+
 #if defined(__APPLE__)
         // On macOS, observation can *only* be done in the main thread
         // with an active CFRunLoop.
@@ -381,9 +1049,33 @@ namespace LsMcuRemote {
             return;
     }
 
-    void Controller::changeBank(int bank){
+
+    void Controller::gotoBank(int bank){
         if (state_ != State::Running)
             return;
+
+        for(auto & [key, midiDevice] : data_.devices){
+            midiDevice.gotoBank(bank);
+        }
+    }
+
+    void Controller::changeBank(int bankUpDown){
+        if (state_ != State::Running)
+            return;
+
+        // ignore nonsense
+        if (bankUpDown == 0)
+            return;
+
+        for(auto & [key, midiDevice] : data_.devices){
+            midiDevice.changeBank(bankUpDown);
+        }
+//        int bank = data_.;
+//
+//        std::cerr << "current page " << lsProxy_.lsState().page << std::endl;
+//        std::cerr << "target page " << page << std::endl;
+//
+//        gotoPage(page);
     }
 
     void Controller::gotoPage(int page){
@@ -403,26 +1095,24 @@ namespace LsMcuRemote {
         if (state_ != State::Running)
             return;
 
+        // ignore nonsense
         if (pageUpDown == 0)
             return;
 
         int page = lsProxy_.lsState().page + pageUpDown;
 
-        std::cerr << "current page " << lsProxy_.lsState().page << std::endl;
-        std::cerr << "target page " << page << std::endl;
+//        std::cerr << "current page " << lsProxy_.lsState().page << std::endl;
+//        std::cerr << "target page " << page << std::endl;
 
         gotoPage(page);
     }
 
-    void Controller::midiDeviceEncoder(MidiDevice &midiDevice, MidiDevice::VPot::EncoderFunction encoderFunction, int relativeValue){
-
-
-        std::cerr << "relative value = " << relativeValue << std::endl;
+    void Controller::midiDeviceEncoder(MidiDevice &midiDevice, MidiDevice::EncoderFunction encoderFunction, int relativeValue){
 
         if (relativeValue == 0)
             return;
 
-        using EF = MidiDevice::VPot::EncoderFunction;
+        using EF = MidiDevice::EncoderFunction;
         switch(encoderFunction){
             case EF::EFEncoder1:
                 lsProxy_.encoderChange(0,relativeValue);
@@ -436,20 +1126,287 @@ namespace LsMcuRemote {
             case EF::EFEncoder4:
                 lsProxy_.encoderChange(3,relativeValue);
                 break;
+            case EF::EFGrandmaster:
+            {
+                int level = (lsProxy_.lsState().grandmasterLevel + relativeValue * kEncoderPbLevelStepsize) << 6;
+                midiDeviceFader(midiDevice, MidiDevice::PlaybackId::PIGm, level);
+            }
+                break;
+            case EF::EFSmChase:
+            {
+                int level = (lsProxy_.lsState().chaseSpeedMasterLevel + relativeValue * kEncoderPbLevelStepsize) << 6;
+                midiDeviceFader(midiDevice, MidiDevice::PlaybackId::PISmChase, level);
+            }
+                break;
+            case EF::EFSmFxSize:
+            {
+                int level = (lsProxy_.lsState().fxSizeMasterLevel + relativeValue * kEncoderPbLevelStepsize) << 6;
+                midiDeviceFader(midiDevice, MidiDevice::PlaybackId::PISmFxSize, level);
+            }
+                break;
+            case EF::EFSmFxSpeed:
+            {
+                int level = (lsProxy_.lsState().fxSpeedMasterLevel + relativeValue * kEncoderPbLevelStepsize) << 6;
+                midiDeviceFader(midiDevice, MidiDevice::PlaybackId::PISmFxSpeed, level);
+            }
+                break;
+            case EF::EFSelect:
+                if (relativeValue < 0)
+                    lsProxy_.pressButton(Buttons::SelectPrevious, false);
+                else
+                    lsProxy_.pressButton(Buttons::SelectNext, false);
+                break;
             case EF::EFBank:
+                changeBank(relativeValue);
                 break;
             case EF::EFPage:
-                std::cerr << "page " << relativeValue << std::endl;
                 changePage(relativeValue);
                 break;
-            case EF::EFActionLayer:
+            case EF::EFButtonLayer:
                 break;
             case EF::EFNone:
                 break;
         }
     }
 
-    void Controller::midiDeviceButton(MidiDevice &midiDevice, MidiDevice::ButtonFunction buttonFunction, bool pressed){
+    bool Controller::midiDeviceButton(MidiDevice &midiDevice, MidiDevice::ButtonAction & action, bool pressed){
+
+        switch(action.fun){
+
+            case MidiDevice::BFPageUp:
+                lsProxy_.pressButton(Buttons::Clear, pressed);
+                return true;
+            case MidiDevice::BFPageDown:
+                lsProxy_.pressButton(Buttons::Clear, pressed);
+                return true;
+
+            case MidiDevice::BFDBO:
+                lsProxy_.pressButton(Buttons::DBO, pressed);
+                return true;
+
+            case MidiDevice::BFEdit:
+                lsProxy_.pressButton(Buttons::Edit, pressed);
+                return true;
+            case MidiDevice::BFUpdate:
+                lsProxy_.pressButton(Buttons::Update, pressed);
+                return true;
+            case MidiDevice::BFDelete:
+                lsProxy_.pressButton(Buttons::Delete, pressed);
+                return true;
+            case MidiDevice::BFCopy:
+                lsProxy_.pressButton(Buttons::Copy, pressed);
+                return true;
+            case MidiDevice::BFMove:
+                lsProxy_.pressButton(Buttons::Move, pressed);
+                return true;
+            case MidiDevice::BFSet:
+                lsProxy_.pressButton(Buttons::Set, pressed);
+                return true;
+            case MidiDevice::BFFan:
+                lsProxy_.pressButton(Buttons::Fan, pressed);
+                return true;
+
+            case MidiDevice::BFClear:
+                lsProxy_.pressButton(Buttons::Clear, pressed);
+                return true;
+            case MidiDevice::BFRec:
+                lsProxy_.pressButton(Buttons::Rec, pressed);
+                return true;
+
+            case MidiDevice::BFFind:
+                lsProxy_.pressButton(Buttons::Find, pressed);
+                return true;
+
+            case MidiDevice::BFSelectPlayback:
+                lsProxy_.pressPlaybackButton(PlaybackButtons::Select, action.target,pressed);
+                return true;
+
+            case MidiDevice::BFGo:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    lsProxy_.pressButton(Buttons::SelectedPlaybackGo, pressed);
+                else
+                    lsProxy_.pressPlaybackButton(PlaybackButtons::Go, action.target, pressed);
+                return true;
+            case MidiDevice::BFRelease:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    lsProxy_.pressButton(Buttons::SelectedPlaybackRelease, pressed);
+                else
+                    lsProxy_.pressPlaybackButton(PlaybackButtons::Release, action.target, pressed);
+                return true;
+            case MidiDevice::BFPause:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    lsProxy_.pressButton(Buttons::SelectedPlaybackPause, pressed);
+                else
+                    lsProxy_.pressPlaybackButton(PlaybackButtons::Pause, action.target, pressed);
+                return true;
+            case MidiDevice::BFNextCue:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    lsProxy_.pressButton(Buttons::SelectedPlaybackNextCue, pressed);
+                else
+                    lsProxy_.pressPlaybackButton(PlaybackButtons::NextCue, action.target, pressed);
+                return true;
+            case MidiDevice::BFPreviousCue:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    lsProxy_.pressButton(Buttons::SelectedPlaybackPreviousCue, pressed);
+                else
+                    lsProxy_.pressPlaybackButton(PlaybackButtons::PreviousCue, action.target, pressed);
+                return true;
+
+
+            case MidiDevice::BFSelectFixture:
+                lsProxy_.pressButton(Buttons::SelectFixture, pressed);
+                return true;
+            case MidiDevice::BFSelectGroup:
+                lsProxy_.pressButton(Buttons::SelectGroup, pressed);
+                return true;
+            case MidiDevice::BFSelectNext:
+                lsProxy_.pressButton(Buttons::SelectNext, pressed);
+                return true;
+            case MidiDevice::BFSelectPrevious:
+                lsProxy_.pressButton(Buttons::SelectPrevious, pressed);
+                return true;
+
+
+            case MidiDevice::BFIntensity:
+                lsProxy_.pressButton(Buttons::Intensity, pressed);
+                return true;
+            case MidiDevice::BFPosition:
+                lsProxy_.pressButton(Buttons::Position, pressed);
+                return true;
+            case MidiDevice::BFColor:
+                lsProxy_.pressButton(Buttons::Color, pressed);
+                return true;
+            case MidiDevice::BFBeam:
+                lsProxy_.pressButton(Buttons::Beam, pressed);
+                return true;
+            case MidiDevice::BFAdvanced:
+                lsProxy_.pressButton(Buttons::Advanced, pressed);
+                return true;
+            case MidiDevice::BFGobo:
+                lsProxy_.pressButton(Buttons::Gobo, pressed);
+                return true;
+            case MidiDevice::BFFx:
+                lsProxy_.pressButton(Buttons::FX, pressed);
+                return true;
+
+
+            case MidiDevice::BFChaseSpeedMasterReset:
+                lsProxy_.pressButton(Buttons::ChaseSpeedMasterReset, pressed);
+                return true;
+            case MidiDevice::BFChaseSpeedMasterTap:
+                lsProxy_.pressButton(Buttons::ChaseSpeedMasterTap, pressed);
+                return true;
+            case MidiDevice::BFFxSizeMasterReset:
+                lsProxy_.pressButton(Buttons::FxSizeMasterReset, pressed);
+                return true;
+            case MidiDevice::BFFxSpeedMasterReset:
+                lsProxy_.pressButton(Buttons::FxSpeedMasterReset, pressed);
+                return true;
+            case MidiDevice::BFFxSpeedMasterTap:
+                lsProxy_.pressButton(Buttons::FxSpeedMasterTap, pressed);
+                return true;
+
+            case MidiDevice::BFExecutor:
+            {
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    return false;
+
+                int page = action.target / 100;
+                int column = action.target / 10 % 10;
+                int row = action.target % 10;
+
+                lsProxy_.pressExecutor(page, column, row, pressed);
+            }
+                return true;
+            case MidiDevice::BFExecutorRow:
+            {
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    return false;
+
+                int page = action.target / 100;
+                int row = action.target % 10;
+
+                lsProxy_.pressExecutor(page, row, pressed);
+            }
+                return true;
+
+
+            case MidiDevice::BFNextBank:
+                // on release only
+                if (!pressed)
+                    changeBank(1);
+                return true;
+            case MidiDevice::BFPreviousBank:
+                // on release only
+                if (!pressed)
+                    changeBank(-1);
+                return true;
+            case MidiDevice::BFSelectBank:
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    throw new std::invalid_argument("selectBank action must have a valid target");
+                // on release only
+                if (!pressed)
+                    gotoBank(action.target);
+                return true;
+
+            case MidiDevice::BFNone:
+            default:
+        }
+
+        return false;
+    }
+
+    void Controller::midiDeviceFader(MidiDevice &device, MidiDevice::PlaybackId pid, int level){
+
+        if (pid == MidiDevice::PlaybackId::PINone)
+            return;
+
+        // 14-bit -> 8-bit
+        level >>= 6;
+
+        // sanity check
+        if (level < 0 || 255 < level)
+            return;
+
+//        std::cerr << "level = " << level << std::endl;
+
+        switch(pid){
+            case MidiDevice::PlaybackId::PIGm:
+                if (lsProxy_.lsState().grandmasterLevel != level)
+                    lsProxy_.setGrandmaster(level);
+                break;
+            case MidiDevice::PlaybackId::PISmChase:
+                if (lsProxy_.lsState().chaseSpeedMasterLevel != level)
+                    lsProxy_.setSubmaster(Submasters::ChaseSpeedMaster,level);
+                break;
+            case MidiDevice::PlaybackId::PISmFxSpeed:
+                if (lsProxy_.lsState().fxSpeedMasterLevel != level)
+                    lsProxy_.setSubmaster(Submasters::FxSpeedMaster,level);
+                break;
+            case MidiDevice::PlaybackId::PISmFxSize:
+                if (lsProxy_.lsState().fxSizeMasterLevel != level)
+                    lsProxy_.setSubmaster(Submasters::FxSizeMaster,level);
+                break;
+            default:
+                if (lsProxy_.lsState().playbacks->level != level)
+                    lsProxy_.setPlaybackLevel((int)pid, level);
+        }
+
+    }
+
+    void Controller::lsPageChange(){
+        for(auto & [key,midiDevice] : data_.devices){
+            midiDevice.updateVPotLcd();
+            midiDevice.updatePbLcd();
+            midiDevice.updateTrackColors();
+        }
+    }
+
+    void Controller::lsDeviceFader(MidiDevice::PlaybackId pid, int level){
+
+        for(auto & [key,midiDevice] : data_.devices){
+            midiDevice.updatePbLevel(pid, level);
+        }
 
     }
 

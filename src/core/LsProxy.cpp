@@ -121,7 +121,6 @@ namespace LsMcuRemote {
             OSCPP::Server::ArgStream args(msg.args());
 
             int i,page,row,col;
-            int argc = 0;
 
             try {
 //                std::cerr << "addr " << msg.address() << std::endl;
@@ -210,7 +209,7 @@ namespace LsMcuRemote {
                     if (lsState_.fxSpeedMasterLevel == level)
                         return;
 
-                    lsState_.fxSpeedMasterLevel = level;
+                    lsState_.chaseSpeedMasterLevel = level;
 
                     if (config_.onSubmasterSync)
                         config_.onSubmasterSync(Submasters::ChaseSpeedMaster,level);
@@ -224,7 +223,7 @@ namespace LsMcuRemote {
                     if (lsState_.fxSpeedMasterLevel == level)
                         return;
 
-                    lsState_.fxSpeedMasterLevel = level;
+                    lsState_.fxSizeMasterLevel = level;
 
                     if (config_.onSubmasterSync)
                         config_.onSubmasterSync(Submasters::FxSizeMaster,level);
@@ -261,10 +260,11 @@ namespace LsMcuRemote {
                 }
                 else {
 
-                    std::cerr << "Unkown OSC msg: " << msg.address() << std::endl;
+                    std::cerr << "Unhandled OSC msg: " << msg.address() << std::endl;
                 }
             } catch(std::exception e){
-                std::cerr << "Errrrrr " << e.what() << std::endl;
+                // note sometimes Lightshark sends invalid OSC packets, so trying to access the data (arguments) throws another error....
+                std::cerr << "Error handling OSC msg addr = " << msg.address() << " with args (" << args.size() << ") / exception: " << e.what() << std::endl;
             }
         }
 
@@ -307,7 +307,12 @@ namespace LsMcuRemote {
             //// set some socket options
             // reuse port
             int optval = 1;
-//                setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+//            setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+
+//            struct ip_mreq m;
+//            m.imr_interface.s_addr = inet_addr("10.0.0.148");
+//            m.imr_multiaddr.s_addr = inet_addr("224.0.0.1");
+//            setsockopt(sockfd_, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&m, sizeof(m));
 
             // set recv timeout
             struct timeval timeout;
@@ -568,8 +573,8 @@ namespace LsMcuRemote {
                 case Buttons::SelectedPlaybackGo:
                     addr = const_cast<char*>(kLsOscSelectedPlaybackGo);
                     break;
-                case Buttons::SelectedPlaybackStop:
-                    addr = const_cast<char*>(kLsOscSelectedPlaybackStop);
+                case Buttons::SelectedPlaybackRelease:
+                    addr = const_cast<char*>(kLsOscSelectedPlaybackRelease);
                     break;
                 case Buttons::SelectedPlaybackPreviousCue:
                     addr = const_cast<char*>(kLsOscSelectedPlaybackPrevious);
@@ -677,7 +682,7 @@ namespace LsMcuRemote {
                     cmd = const_cast<char*>(kLsOscPlaybackFlash_Int);
                     break;
                 case PlaybackButtons::Release:
-                    cmd = const_cast<char*>(kLsOscPlaybackStop_Int);
+                    cmd = const_cast<char*>(kLsOscPlaybackRelease_Int);
                     break;
                 case PlaybackButtons::PreviousCue:
                     cmd = const_cast<char*>(kLsOscPlaybackPrevious_Int);
