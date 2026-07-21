@@ -35,7 +35,7 @@
 
 static char * argv0 = nullptr;
 
-static LsMcuRemote::Controller controller;
+static LsMcuRemote::Controller & controller = LsMcuRemote::Controller::getInstance();
 
 void probeMidi(bool allowVirtual = false){
 
@@ -109,75 +109,8 @@ void help(){
             , argv0, argv0);
 }
 
-//void enumerate_api(libremidi::API api)
-//{
-//    std::string_view api_name = libremidi::get_api_display_name(api);
-//    std::cout << "Displaying ports for: " << api_name << std::endl;
-//
-//    // On Windows 10, apparently the MIDI devices aren't exactly available as soon as the app open...
-//    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//
-//    libremidi::observer midi{
-//            {.track_hardware = true, .track_virtual = false}, libremidi::observer_configuration_for(api)};
-//
-//    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//
-//    {
-//        // Check inputs.
-//        auto ports = midi.get_input_ports();
-//        std::cout << ports.size() << " MIDI input sources:\n";
-//        int i = 0;
-//        for (auto& port : ports){
-////       std::cout << " - " << i++ << ": " << port << '\n';
-//
-//            std::cout << "IN Port " << i++ << ":" << port.device_name << " (" << port.port_name << ")";
-//
-//            std::cout << std::endl;
-//        }
-//    }
-//
-//    {
-//        // Check outputs.
-//        auto ports = midi.get_output_ports();
-//        std::cout << ports.size() << " MIDI output sinks:\n";
-//        int i = 0;
-//        for (auto& port : ports){
-//
-//            std::cout << "OUT Port " << i++ << ":" << port.device_name << " (" << port.port_name << ")";
-//
-//
-//            std::cout << std::endl;
-//        }
-////      std::cout << " - " << i++ << ": " << port << '\n';
-//    }
-//
-//    std::cout << "\n";
-//}
 
 int main(int argc, char * argv[]){
-
-//    enumerate_api(libremidi::API::UNSPECIFIED);
-//
-//    libremidi::observer obs{{
-//                                        .track_hardware = true,
-//                                        .track_virtual = false,
-//                                    .input_added = [&](const libremidi::input_port& p) {
-//                                        std::cerr << " : input added " << p.port_name << "\n";
-//                                    },
-//                                    .input_removed = [&](const libremidi::input_port& p) {
-//                                        std::cerr << " : input removed " << p.port_name << "\n";
-//                                    },
-//                                    .output_added = [&](const libremidi::output_port& p) {
-//                                        std::cerr << " : output added " << p.port_name << "\n";
-//                                    },
-//                                    .output_removed = [&](const libremidi::output_port& p) {
-//                                        std::cerr << " : output removed " << p.port_name << "\n";
-//                                    },
-//
-//                            }, libremidi::API::COREMIDI};
-//    CFRunLoopRun();
-//
-//    return 0;
 
     argv0 = argv[0];
 

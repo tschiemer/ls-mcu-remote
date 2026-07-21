@@ -106,25 +106,12 @@ namespace LsMcuRemote {
             static constexpr std::chrono::milliseconds NoAutoSync = std::chrono::milliseconds (0);
 
         private:
-            LsState lsState_;
-//
-//            struct  {
-//                LsOscPlaybackLevel_t grandmasterLevel = 0;
-//                LsOscPlaybackLevel_t  chaseSpeedMasterLevel = 0;
-//                LsOscPlaybackLevel_t  fxSizeMasterLevel = 0;
-//                LsOscPlaybackLevel_t  fxSpeedMasterLevel = 0;
-//                int page = 1;
-//                struct Playback_st {
-//                    uint8_t level = 0;
-//                    bool is_active = false;
-//                } playbacks[kLsOscPlaybackCount];
-//                bool executors[kLsOscExecutorPageCount][kLsOscExecutorColumnCount][kLsOscExecutorRowCount];
-//            } lsState_;
-
-
-        private:
 
             const int kUdpReceiveBufferSize = 2000;
+
+        private:
+            LsState lsState_;
+
 
         private:
 
@@ -180,6 +167,8 @@ namespace LsMcuRemote {
 
             void pressExecutor(int page, int column, int row, bool pressed = false);
             void pressExecutorRow(int page, int row, bool pressed = false);
+
+            void encoderChange(int encoder, int value);
     };
 
 } // LsMcuRemote

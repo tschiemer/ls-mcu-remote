@@ -1,0 +1,64 @@
+{
+  "lightshark": {
+    "ip": "10.0.0.10",
+    "port": 8000,
+    "remotePort": 9000
+  },
+  "devices": {
+    "X-TOUCH_INT":
+    {
+
+    "asdfportName": "X-TOUCH_INT",
+
+    "deviceType": 15,
+
+    "playbacks" : {
+      "fixed": false,
+      "offset": 0,
+      "linked": true
+    },
+
+    "buttons": [
+      {
+        "midiCc": 4,
+        "function": 0
+      }
+    ],
+
+    "vpots" : [
+      {
+        "encoder": "encoder1",
+        "btn": null
+      },
+      {
+        "encoder": "encoder2",
+        "btn": null
+      },
+      {
+        "encoder": "encoder3",
+        "btn": null
+      },
+      {
+        "encoder": "encoder4",
+        "btn": null
+      },
+      {
+        "encoder": null,
+        "btn": null
+      },
+      {
+        "encoder": "buttonLayer",
+        "btn": null
+      },
+      {
+        "encoder": "page",
+        "btn": null
+      },
+      {
+        "encoder": "bank",
+        "btn": "vpot_mode"
+      }
+    ]
+  }
+}
+}

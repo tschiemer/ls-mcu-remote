@@ -15,4 +15,5 @@ Copyright (C) 2026 Philip Tschiemer
 
 - [libremidi](https://github.com/celtera/libremidi)
 - [oscpp](https://github.com/kaoskorobase/oscpp)
+- [nlohmann::json](https://github.com/nlohmann/json)
 

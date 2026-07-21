@@ -488,13 +488,12 @@ namespace LsMcuRemote {
 
     void LsProxy::selectPage(int page){
 
-        if (state_ != State::Running){
+        if (state_ != State::Running)
             return;
-        }
 
-        if (page < 0 || kLsOscPageCount < page){
-            throw new std::out_of_range("page must be in [0,30], starting at 0!");
-        }
+
+        if (page < kLsOscPageMin || kLsOscPageMax < page)
+            throw new std::out_of_range("page must be in [1,30], starting at 1!");
 
         try {
             char buf[128];
@@ -790,6 +789,35 @@ namespace LsMcuRemote {
             OSCPP::Client::Packet packet(buf, sizeof(buf));
 
             packet.openMessage(addr,1).int32(pressed).closeMessage();
+
+            sendUdp(packet.data(), packet.size());
+
+        } catch(std::exception e) {
+            std::cerr << "Error sending: " << e.what() << std::endl;
+        }
+    }
+
+    void LsProxy::encoderChange(int encoder, int relativeValue){
+
+        if (state_ != State::Running){
+            return;
+        }
+
+        std::cerr << "encoder " << encoder << " -> " << relativeValue << std::endl;
+
+        if (encoder < 0 || kLsOscEncoderCount <= encoder)
+            throw new std::out_of_range("encoder must be in [0,3] starting at 0!");
+
+
+        try {
+            char addr[128], buf[128];
+
+            std::snprintf(addr, sizeof(addr), kLsOscEncoder_Int,
+                          encoder+kLsOscEncoderIndexMin);
+
+            OSCPP::Client::Packet packet(buf, sizeof(buf));
+
+            packet.openMessage(addr,1).int32(relativeValue).closeMessage();
 
             sendUdp(packet.data(), packet.size());
 

@@ -13,9 +13,6 @@ include(ls-mcu-remote.libremidi)
 
 #include(ls-mcu-remote.asio)
 
-find_library(COREMIDI_LIBRARY CoreMIDI)
-find_library(COREAUDIO_LIBRARY CoreAudio)
-find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 
 
 add_library(lsmcuremote
@@ -25,18 +22,13 @@ add_library(lsmcuremote
 target_include_directories(lsmcuremote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include/ls-mcu-remote)
 
 target_compile_definitions(lsmcuremote PUBLIC LIBREMIDI_COREMIDI)
-target_link_libraries(lsmcuremote PUBLIC oscpp::oscpp nlohmann_json::nlohmann_json libremidi::libremidi
-        ${COREFOUNDATION_LIBRARY}
-        ${COREAUDIO_LIBRARY}
-        ${COREMIDI_LIBRARY})
+target_link_libraries(lsmcuremote PUBLIC oscpp::oscpp nlohmann_json::nlohmann_json libremidi::libremidi)
 
-#target_compile_definitions(libremidi ${_public} LIBREMIDI_COREMIDI)
 
 add_executable(ls-mcu-remote src/apps/ls-mcu-remote/ls-mcu-remote.cpp)
 target_include_directories(ls-mcu-remote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include/ls-mcu-remote)
 #target_include_directories(ls_mcu_remote PUBLIC /src/include)
 target_link_libraries(ls-mcu-remote PRIVATE lsmcuremote)
-target_compile_definitions(ls-mcu-remote PUBLIC LIBREMIDI_COREMIDI)
 
 add_executable(playground main.cpp)
 target_include_directories(playground PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include/ls-mcu-remote)
