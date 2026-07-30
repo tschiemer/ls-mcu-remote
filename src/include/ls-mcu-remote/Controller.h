@@ -38,6 +38,10 @@ namespace LsMcuRemote {
 
         public:
 
+            //forward declarations
+            class MidiDevice;
+            class Data;
+
             static constexpr int kEncoderPbLevelStepsize = 1;
 
 
@@ -134,6 +138,28 @@ namespace LsMcuRemote {
                             int target = kNoTarget;
 
                             NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ButtonAction, fun, target)
+
+                        public:
+
+                            static inline int executorTarget(int page, int col, int row){
+                                return 100*(page +1) + 10*(col+1) + (row+1);
+                            }
+                            static inline void executorTarget(int target, int &page, int &col, int &row){
+                                page = target / 100 - 1;
+                                col = target / 10 % 10 - 1;
+                                row = target % 10 - 1;
+                            }
+
+                            static inline int executorRowTarget(int page, int row){
+                                // let's have column = 0
+                                return executorTarget(page, -1, row);
+                            }
+                            static inline void executorRowTarget(int target, int &page, int &row){
+                                page = target / 100 - 1;
+                                // same format as single executor but without row
+                                row = target % 10 - 1;
+                            }
+
                     };
 
                     typedef std::map<std::string, ButtonAction> ButtonLayer;
@@ -172,8 +198,12 @@ namespace LsMcuRemote {
                     friend Controller;
 
                     LsProxy::LsState * lsStateRef_;
-                    BankLayoutSet * sharedBanks_;
-                    ButtonLayerSet * sharedButtonLayers_;
+
+                    Controller::Data * sharedData_;
+
+//                    BankLayoutSet * sharedBanks_;
+//                    ButtonLayerSet * sharedButtonLayers_;
+//                    std::vector<std::map<
 
                     libremidi::midi_in * midiInRef_;
                     libremidi::midi_out * midiOutRef_;
@@ -197,11 +227,17 @@ namespace LsMcuRemote {
                 protected:
 
                     inline BankLayout & currentBank(){
-                        return sharedBanks_->at(banks.current_);
+                        return sharedData_->banks.at(banks.current_);
+//                        return sharedBanks_->at(banks.current_);
                     }
 
                     inline ButtonLayer & currentButtonLayer(){
-                        return sharedButtonLayers_->at(buttonLayer);
+                        return sharedData_->buttonLayers.at(buttonLayer);
+//                        return sharedButtonLayers_->at(buttonLayer);
+                    }
+
+                    inline std::map<int,MCU::mixer_command> & currentExecutorLUT(){
+                        return sharedData_->executorsPerLayerLUT_.at(buttonLayer);
                     }
 
                     void init();
@@ -227,6 +263,8 @@ namespace LsMcuRemote {
                     void updatePbLevels();
                     void updatePbLevel(PlaybackId pid, int level);
 
+                    void updateExecutorState(int page, int col, int row, bool is_active);
+
                     void gotoBank(int bank);
                     void changeBank(int upOrDown);
 
@@ -241,19 +279,16 @@ namespace LsMcuRemote {
                     }
 
                     static const char * mixerCommand2ButtonKeyLUT(MCU::mixer_command cmd);
-//                    static const char * ButtonKey2LUT(MCU::mixer_command cmd);
+                    static libremidi::remote_control_protocol::mixer_command buttonKey2MixerCommandLUT(std::string key);
 
-//                    void remapButtonActionLUT();
                     ButtonAction & lookupButtonAction(MCU::mixer_command cmd);
-
-//                    void resetExecutorLUT();
-
-
 
             };
 
 
             class Data {
+
+                friend MidiDevice;
 
                 public:
 
@@ -272,6 +307,19 @@ namespace LsMcuRemote {
                     std::map<std::string,MidiDevice> devices;
 
                     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Data, lightshark, banks, buttonLayers, devices)
+
+
+                protected:
+
+                    std::vector<std::map<int, MCU::mixer_command>> executorsPerLayerLUT_;
+
+                    void initExecutorLayerLUT();
+
+                public:
+
+                    void init();
+
+
             };
 
         private:
@@ -347,6 +395,7 @@ namespace LsMcuRemote {
 
             void lsPageChange();
             void lsDeviceFader(MidiDevice::PlaybackId, int level);
+            void lsExecutor(int page, int col, int row, bool is_active);
 
             void changeActionLayer(int actionLayerUpDown);
             void gotoActionLayer(int actionLayer);
@@ -469,6 +518,141 @@ namespace LsMcuRemote {
         {Controller::MidiDevice::PlaybackId::PISmFxSize, "fxSize"},
         {Controller::MidiDevice::PlaybackId::PISmFxSpeed, "fxSpeed"},
         {Controller::MidiDevice::PlaybackId::PIGm, "gm"},
+    })
+
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(libremidi::remote_control_protocol::mixer_command, {
+
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_0, "vpot_click_0"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_1, "vpot_click_1"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_2, "vpot_click_2"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_3, "vpot_click_3"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_4, "vpot_click_4"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_5, "vpot_click_5"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_6, "vpot_click_6"},
+        {libremidi::remote_control_protocol::mixer_command::vpot_click_7, "vpot_click_7"},
+
+        {libremidi::remote_control_protocol::mixer_command::rec_0, "rec_0"},
+        {libremidi::remote_control_protocol::mixer_command::rec_1, "rec_1"},
+        {libremidi::remote_control_protocol::mixer_command::rec_2, "rec_2"},
+        {libremidi::remote_control_protocol::mixer_command::rec_3, "rec_3"},
+        {libremidi::remote_control_protocol::mixer_command::rec_4, "rec_4"},
+        {libremidi::remote_control_protocol::mixer_command::rec_5, "rec_5"},
+        {libremidi::remote_control_protocol::mixer_command::rec_6, "rec_6"},
+        {libremidi::remote_control_protocol::mixer_command::rec_7, "rec_7"},
+
+        {libremidi::remote_control_protocol::mixer_command::solo_0, "solo_0"},
+        {libremidi::remote_control_protocol::mixer_command::solo_1, "solo_1"},
+        {libremidi::remote_control_protocol::mixer_command::solo_2, "solo_2"},
+        {libremidi::remote_control_protocol::mixer_command::solo_3, "solo_3"},
+        {libremidi::remote_control_protocol::mixer_command::solo_4, "solo_4"},
+        {libremidi::remote_control_protocol::mixer_command::solo_5, "solo_5"},
+        {libremidi::remote_control_protocol::mixer_command::solo_6, "solo_6"},
+        {libremidi::remote_control_protocol::mixer_command::solo_7, "solo_7"},
+
+        {libremidi::remote_control_protocol::mixer_command::mute_0, "mute_0"},
+        {libremidi::remote_control_protocol::mixer_command::mute_1, "mute_1"},
+        {libremidi::remote_control_protocol::mixer_command::mute_2, "mute_2"},
+        {libremidi::remote_control_protocol::mixer_command::mute_3, "mute_3"},
+        {libremidi::remote_control_protocol::mixer_command::mute_4, "mute_4"},
+        {libremidi::remote_control_protocol::mixer_command::mute_5, "mute_5"},
+        {libremidi::remote_control_protocol::mixer_command::mute_6, "mute_6"},
+        {libremidi::remote_control_protocol::mixer_command::mute_7, "mute_7"},
+
+        {libremidi::remote_control_protocol::mixer_command::sel_0, "sel_0"},
+        {libremidi::remote_control_protocol::mixer_command::sel_1, "sel_1"},
+        {libremidi::remote_control_protocol::mixer_command::sel_2, "sel_2"},
+        {libremidi::remote_control_protocol::mixer_command::sel_3, "sel_3"},
+        {libremidi::remote_control_protocol::mixer_command::sel_4, "sel_4"},
+        {libremidi::remote_control_protocol::mixer_command::sel_5, "sel_5"},
+        {libremidi::remote_control_protocol::mixer_command::sel_6, "sel_6"},
+        {libremidi::remote_control_protocol::mixer_command::sel_7, "sel_7"},
+
+        // TODO metering
+        {libremidi::remote_control_protocol::mixer_command::assign_track, "assign_track"},
+        {libremidi::remote_control_protocol::mixer_command::assign_send, "assign_send"},
+        {libremidi::remote_control_protocol::mixer_command::assign_pan, "assign_pan"},
+        {libremidi::remote_control_protocol::mixer_command::assign_plugin, "assign_plugin"},
+        {libremidi::remote_control_protocol::mixer_command::assign_eq, "assign_eq"},
+        {libremidi::remote_control_protocol::mixer_command::assign_instrument, "assign_instrument"},
+
+        {libremidi::remote_control_protocol::mixer_command::bank_left, "bank_left"},
+        {libremidi::remote_control_protocol::mixer_command::bank_right, "bank_right"},
+        {libremidi::remote_control_protocol::mixer_command::channel_left, "channel_left"},
+        {libremidi::remote_control_protocol::mixer_command::channel_right, "channel_right"},
+        {libremidi::remote_control_protocol::mixer_command::flip, "flip"},
+        {libremidi::remote_control_protocol::mixer_command::global, "global"},
+
+        {libremidi::remote_control_protocol::mixer_command::name_value_button, "name_value_button"},
+        {libremidi::remote_control_protocol::mixer_command::smpte_beats_button, "smpte_beats_button"},
+
+        {libremidi::remote_control_protocol::mixer_command::f1, "f1"},
+        {libremidi::remote_control_protocol::mixer_command::f2, "f2"},
+        {libremidi::remote_control_protocol::mixer_command::f3, "f3"},
+        {libremidi::remote_control_protocol::mixer_command::f4, "f4"},
+        {libremidi::remote_control_protocol::mixer_command::f5, "f5"},
+        {libremidi::remote_control_protocol::mixer_command::f6, "f6"},
+        {libremidi::remote_control_protocol::mixer_command::f7, "f7"},
+        {libremidi::remote_control_protocol::mixer_command::f8, "f8"},
+
+        {libremidi::remote_control_protocol::mixer_command::midi_tracks, "midi_tracks"},
+        {libremidi::remote_control_protocol::mixer_command::inputs, "inputs"},
+        {libremidi::remote_control_protocol::mixer_command::audio_tracks, "audio_tracks"},
+        {libremidi::remote_control_protocol::mixer_command::audio_instruments, "audio_instruments"},
+        {libremidi::remote_control_protocol::mixer_command::aux, "aux"},
+        {libremidi::remote_control_protocol::mixer_command::busses, "busses"},
+        {libremidi::remote_control_protocol::mixer_command::outputs, "outputs"},
+        {libremidi::remote_control_protocol::mixer_command::user, "user"},
+
+        {libremidi::remote_control_protocol::mixer_command::shift, "shift"},
+        {libremidi::remote_control_protocol::mixer_command::option, "option"},
+        {libremidi::remote_control_protocol::mixer_command::control, "control"},
+        {libremidi::remote_control_protocol::mixer_command::alt, "alt"},
+
+        {libremidi::remote_control_protocol::mixer_command::save, "save"},
+        {libremidi::remote_control_protocol::mixer_command::undo, "undo"},
+        {libremidi::remote_control_protocol::mixer_command::cancel, "cancel"},
+        {libremidi::remote_control_protocol::mixer_command::enter, "enter"},
+
+        {libremidi::remote_control_protocol::mixer_command::markers, "markers"},
+        {libremidi::remote_control_protocol::mixer_command::nudge, "nudge"},
+        {libremidi::remote_control_protocol::mixer_command::cycle, "cycle"},
+        {libremidi::remote_control_protocol::mixer_command::drop, "drop"},
+        {libremidi::remote_control_protocol::mixer_command::replace, "replace"},
+        {libremidi::remote_control_protocol::mixer_command::click, "click"},
+        {libremidi::remote_control_protocol::mixer_command::solo, "solo"},
+
+        {libremidi::remote_control_protocol::mixer_command::rewind, "rewind"},
+        {libremidi::remote_control_protocol::mixer_command::forward, "forward"},
+        {libremidi::remote_control_protocol::mixer_command::stop, "stop"},
+        {libremidi::remote_control_protocol::mixer_command::play, "play"},
+        {libremidi::remote_control_protocol::mixer_command::record, "record"},
+
+        {libremidi::remote_control_protocol::mixer_command::up, "up"},
+        {libremidi::remote_control_protocol::mixer_command::down, "down"},
+        {libremidi::remote_control_protocol::mixer_command::left, "left"},
+        {libremidi::remote_control_protocol::mixer_command::right, "right"},
+        {libremidi::remote_control_protocol::mixer_command::zoom, "zoom"},
+        {libremidi::remote_control_protocol::mixer_command::scrub, "scrub"},
+
+        {libremidi::remote_control_protocol::mixer_command::user_switch_1, "user_switch_1"},
+        {libremidi::remote_control_protocol::mixer_command::user_switch_2, "user_switch_2"},
+
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_0, "fader_touched_0"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_1, "fader_touched_1"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_2, "fader_touched_2"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_3, "fader_touched_3"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_4, "fader_touched_4"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_5, "fader_touched_5"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_6, "fader_touched_6"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_7, "fader_touched_7"},
+        {libremidi::remote_control_protocol::mixer_command::fader_touched_master, "fader_touched_master"},
+
+        {libremidi::remote_control_protocol::mixer_command::smpte_led, "smpte_led"},
+        {libremidi::remote_control_protocol::mixer_command::beats_led, "beats_led"},
+        {libremidi::remote_control_protocol::mixer_command::rude_solo_led, "rude_solo_led"},
+
+        {libremidi::remote_control_protocol::mixer_command::relay_click, "relay_click"}
     })
 
 } // LsMcuRemote

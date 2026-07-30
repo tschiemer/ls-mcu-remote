@@ -170,7 +170,7 @@ namespace LsMcuRemote {
 
                     if (page < kLsOscExecutorPageMin || kLsOscExecutorPageMax < page) return;
                     if (page < kLsOscExecutorColumnValueMin || kLsOscExecutorColumnValueMax < col) return;
-                    if (page < kLsOscExecutorRowValueMin || kLsOscExecutorRowValueMin < row) return;
+                    if (page < kLsOscExecutorRowValueMin || kLsOscExecutorRowValueMax < row) return;
 
                     page--;
                     col--;
@@ -186,7 +186,8 @@ namespace LsMcuRemote {
                     if (config_.onExecutorSync)
                         config_.onExecutorSync(page,col,row,is_active);
 
-//                    std::cerr << "Exec " << " page="  << page << " col=" << col << " row=" << row << " active=" << is_active << std::endl;
+//                    if (is_active)
+//                        std::cerr << "Exec " << " page="  << page << " col=" << col << " row=" << row << " active=" << is_active << std::endl;
                 }
                 else if (strcmp(msg.address(), kLsOscSyncPageResponse) == 0){
 

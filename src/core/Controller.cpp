@@ -221,6 +221,16 @@ namespace LsMcuRemote {
                 "vpot_click_6",
                 "vpot_click_7"
         };
+//        static MCU::mixer_command cmdLUT[8] = {
+//                MCU::mixer_command::vpot_click_0,
+//                MCU::mixer_command::vpot_click_1,
+//                MCU::mixer_command::vpot_click_2,
+//                MCU::mixer_command::vpot_click_3,
+//                MCU::mixer_command::vpot_click_4,
+//                MCU::mixer_command::vpot_click_5,
+//                MCU::mixer_command::vpot_click_6,
+//                MCU::mixer_command::vpot_click_7
+//        };
         static MCU::mixer_control mcLUT[8] = {
                 MCU::mixer_control::vpot_led_0,
                 MCU::mixer_control::vpot_led_1,
@@ -393,7 +403,7 @@ namespace LsMcuRemote {
 
         char lcd[8]= {0,0,0,0,0,0,0,0};
 
-        BankLayout & bank = sharedBanks_->at(banks.current_);
+        BankLayout & bank = currentBank();
 
         int l=0;
 
@@ -502,6 +512,22 @@ namespace LsMcuRemote {
 //        std::cerr << "pid " << (int)pid << std::endl;
 
     }
+    void Controller::MidiDevice::updateExecutorState(int page, int col, int row, bool is_active){
+
+        int target = ButtonAction::executorTarget(page, col, row);
+        auto lut = currentExecutorLUT();
+
+        if (is_active){
+            std::cerr << "executor " << target << std::endl;
+        }
+
+        if (!lut.contains(target))
+            return;
+
+        MCU::mixer_command cmd = lut[target];
+
+        mcuRef_->command(cmd, is_active);
+    }
 
     void Controller::MidiDevice::gotoBank(int bank){
         // ignore command if not supposed to change
@@ -509,7 +535,7 @@ namespace LsMcuRemote {
             return;
 
         // range sanity check
-        if (bank < 0 | sharedBanks_->size() <= bank)
+        if (bank < 0 | sharedData_->banks.size() <= bank)
             return;
 
         // if going to current bank, go to last instead
@@ -708,16 +734,143 @@ namespace LsMcuRemote {
         return LUT[libremidi::to_underlying(cmd)];
     }
 
+    libremidi::remote_control_protocol::mixer_command Controller::MidiDevice::buttonKey2MixerCommandLUT(std::string key){
+
+        static bool to_be_initialized = true;
+        static std::map<std::string, MCU::mixer_command> LUT;
+
+        if (to_be_initialized){
+            to_be_initialized = false;
+
+            // let's make life a bit easier ..
+
+#define SET_LUT(key) LUT[#key] = MCU::mixer_command::key;
+#define SET_LUT_0_7(key) \
+    SET_LUT(key ## _0)       \
+    SET_LUT(key ## _1)       \
+    SET_LUT(key ## _2)       \
+    SET_LUT(key ## _3)       \
+    SET_LUT(key ## _4)       \
+    SET_LUT(key ## _5)       \
+    SET_LUT(key ## _6)       \
+    SET_LUT(key ## _7)
+
+
+            SET_LUT_0_7(sel)
+            SET_LUT_0_7(mute)
+            SET_LUT_0_7(rec)
+            SET_LUT_0_7(solo)
+            SET_LUT_0_7(vpot_click)
+
+            SET_LUT(assign_track)
+            SET_LUT(assign_send)
+            SET_LUT(assign_pan)
+            SET_LUT(assign_plugin)
+            SET_LUT(assign_eq)
+            SET_LUT(assign_instrument)
+
+            SET_LUT(bank_left)
+            SET_LUT(bank_right)
+            SET_LUT(channel_left)
+            SET_LUT(channel_right)
+            SET_LUT(flip)
+            SET_LUT(global)
+
+            SET_LUT(name_value_button)
+            SET_LUT(smpte_beats_button)
+
+            SET_LUT(f1)
+            SET_LUT(f2)
+            SET_LUT(f3)
+            SET_LUT(f4)
+            SET_LUT(f5)
+            SET_LUT(f6)
+            SET_LUT(f7)
+            SET_LUT(f8)
+
+            SET_LUT(midi_tracks)
+            SET_LUT(inputs)
+            SET_LUT(audio_tracks)
+            SET_LUT(audio_instruments)
+            SET_LUT(aux)
+            SET_LUT(busses)
+            SET_LUT(outputs)
+            SET_LUT(user)
+
+            SET_LUT(shift)
+            SET_LUT(option)
+            SET_LUT(control)
+            SET_LUT(alt)
+
+            SET_LUT(save)
+            SET_LUT(undo)
+            SET_LUT(cancel)
+            SET_LUT(enter)
+
+            SET_LUT(markers)
+            SET_LUT(nudge)
+            SET_LUT(cycle)
+            SET_LUT(drop)
+            SET_LUT(replace)
+            SET_LUT(click)
+            SET_LUT(solo)
+
+            SET_LUT(rewind)
+            SET_LUT(forward)
+            SET_LUT(stop)
+            SET_LUT(play)
+            SET_LUT(record)
+
+            SET_LUT(up)
+            SET_LUT(down)
+            SET_LUT(left)
+            SET_LUT(right)
+            SET_LUT(zoom)
+            SET_LUT(scrub)
+
+            SET_LUT(user_switch_1)
+            SET_LUT(user_switch_2)
+
+
+#undef SET_LUT_0_7
+#undef SET_LUT
+        }
+
+        return LUT[key];
+    }
+
     Controller::MidiDevice::ButtonAction & Controller::MidiDevice::lookupButtonAction(MCU::mixer_command cmd){
 
         static ButtonAction NoAction{.fun = BFNone};
 
         const char * lookup = mixerCommand2ButtonKeyLUT(cmd);
 
-        if (lookup && currentButtonLayer().contains(lookup))
+        if (currentButtonLayer().contains(lookup))
             return currentButtonLayer().at(lookup);
 
         return NoAction;
+    }
+
+
+    void Controller::Data::init(){
+        initExecutorLayerLUT();
+    }
+
+    void Controller::Data::initExecutorLayerLUT(){
+        executorsPerLayerLUT_.clear();
+
+        for (MidiDevice::ButtonLayer & layer : buttonLayers){
+
+            std::map<int, MCU::mixer_command> lut;
+
+            for(auto & [cmdKey, buttonAction] : layer){
+                if (buttonAction.fun == MidiDevice::BFExecutor){
+                        lut[buttonAction.target] = MidiDevice::buttonKey2MixerCommandLUT(cmdKey);
+                }
+            }
+
+            executorsPerLayerLUT_.push_back(lut);
+        }
     }
 
     void Controller::initLsProxy(){
@@ -727,7 +880,7 @@ namespace LsMcuRemote {
            .lightsharkPort = data_.lightshark.port,
            .localPort = data_.lightshark.remotePort,
 //                .syncInterval = LsProxy::NoAutoSync,
-//                .syncInterval = std::chrono::milliseconds(500),
+            .syncInterval = std::chrono::milliseconds(100),
            .onGrandmasterSync = [&](PlaybackLevel_t level){
                if (state_ != State::Running)
                    return;
@@ -779,6 +932,8 @@ namespace LsMcuRemote {
 
                if (state_ != State::Running)
                    return;
+
+               lsExecutor(page, col, row, is_active);
            }
         });
 
@@ -798,19 +953,13 @@ namespace LsMcuRemote {
 
     void Controller::initMidiDevices(){
 
-//        std::shared_ptr<MidiDevice::BankLayoutSet> sharedBanks = std::make_shared<MidiDevice::BankLayoutSet>(data_.banks);
-//        std::shared_ptr<MidiDevice::ButtonLayerSet> sharedButtonLayers = std::make_shared<MidiDevice::ButtonLayerSet>(data_.buttonLayers);
-
         for(auto & [portName, midiDevice] : data_.devices){
 
             midiDevice.init();
 
+            // set needed references for devices
             midiDevice.lsStateRef_ = &lsProxy_.lsState();
-            midiDevice.sharedBanks_ = &data_.banks;
-            midiDevice.sharedButtonLayers_ = &data_.buttonLayers;
-
-//            midiDevice.sharedBanks_ = sharedBanks;
-//            midiDevice.sharedButtonLayers_ = std::make_shared<MidiDevice::ButtonLayerSet>(data_.buttonLayers);
+            midiDevice.sharedData_ = &data_;
 
             midiDevice.banks.current_ = midiDevice.banks.offset;
 
@@ -1041,6 +1190,8 @@ namespace LsMcuRemote {
         state_ = State::Starting;
 
         initLsProxy();
+
+        data_.init();
 
         initMidiDevices();
 
@@ -1357,29 +1508,31 @@ namespace LsMcuRemote {
                 if (action.target == MidiDevice::ButtonAction::kNoTarget)
                     return false;
 
-                int page = action.target / 100 - 1;
-                int column = action.target / 10 % 10 - 1;
-                int row = action.target % 10 - 1;
+                int page, col, row;
+
+                MidiDevice::ButtonAction::executorTarget(action.target, page, col, row);
 
                 try {
-                    lsProxy_.pressExecutor(page, column, row, pressed);
+                    lsProxy_.pressExecutor(page, col, row, pressed);
                 } catch (std::exception e){
                     std::cerr << "Error pressing executor: " << e.what() << std::endl;
                 }
+
+                // executor state is shown otherwise
+                return false;
             }
-                return true;
             case MidiDevice::BFExecutorRow:
             {
                 if (action.target == MidiDevice::ButtonAction::kNoTarget)
                     return false;
 
-                int page = action.target / 100 - 1;
-                int row = action.target % 10 - 1;
+                int page, row;
+
+                MidiDevice::ButtonAction::executorRowTarget(action.target, page, row);
 
                 lsProxy_.pressExecutor(page, row, pressed);
-            }
                 return true;
-
+            }
 
             case MidiDevice::BFNextBank:
                 // on release only
@@ -1459,6 +1612,11 @@ namespace LsMcuRemote {
             midiDevice.updatePbLevel(pid, level);
         }
 
+    }
+    void Controller::lsExecutor(int page, int col, int row, bool is_active){
+        for(auto & [key, midiDevice] : data_.devices){
+            midiDevice.updateExecutorState(page, col, row, is_active);
+        }
     }
 
 } // LsMcuRemote
