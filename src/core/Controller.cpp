@@ -169,30 +169,43 @@ namespace LsMcuRemote {
 
         mcuRef_->start();
 
-        new std::thread([&]{
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            mcuRef_->reset();
-            mcuRef_->all_leds_off();
 
 
-
-            updateTrackColors();
-
-
-            updateVPotLcd();
-
-            updatePbLcd();
-            updatePbLevels();
-
-            updateVPotLeds();
-        });
     }
 
     void Controller::MidiDevice::stop(){
         // go offline?
 //        mcuRef_->
+    }
+
+    void Controller::MidiDevice::reset(){
+
+        mcuRef_->reset();
+
+
+
+        // reset LCD
+//        char lcd[113];
+//
+//        std::memset(lcd, sizeof(lcd), ' ');
+//
+//        lcd[sizeof(lcd)-1];
+//
+//        mcuRef_->update_lcd(lcd, 0);
+//
+//        mcuRef_->update_lcd(lcd, 0);
+
+
+        updateTrackColors();
+
+
+        updateVPotLcd();
+
+        updatePbLcd();
+        updatePbLevels();
+
+        updateVPotLeds();
+
     }
 
 
@@ -319,45 +332,45 @@ namespace LsMcuRemote {
 
     void Controller::MidiDevice::updateVPotLcd(int i){
 
-        char lcd[8] = {0,0,0,0,0,0,0,0};
+        char lcd[8] = "       "; // 7 space + EOL
 
         int l = 0;
         switch(vpots[i]){
             case EFEncoder1:
-                l = std::snprintf(lcd, sizeof(lcd), "Enc 1");
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 1  ");
                 break;
             case EFEncoder2:
-                l = std::snprintf(lcd, sizeof(lcd), "Enc 2");
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 2  ");
                 break;
             case EFEncoder3:
-                l = std::snprintf(lcd, sizeof(lcd), "Enc 3");
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 3  ");
                 break;
             case EFEncoder4:
-                l = std::snprintf(lcd, sizeof(lcd), "Enc 4");
+                l = std::snprintf(lcd, sizeof(lcd), "Enc 4  ");
                 break;
             case EFGrandmaster:
-                l = std::snprintf(lcd, sizeof(lcd), "GM");
+                l = std::snprintf(lcd, sizeof(lcd), "GM     ");
                 break;
             case EFSmChase:
-                l = std::snprintf(lcd, sizeof(lcd), "Chase");
+                l = std::snprintf(lcd, sizeof(lcd), "Chase  ");
                 break;
             case EFSmFxSize:
-                l = std::snprintf(lcd, sizeof(lcd), "FxSize");
+                l = std::snprintf(lcd, sizeof(lcd), "FxSize ");
                 break;
             case EFSmFxSpeed:
                 l = std::snprintf(lcd, sizeof(lcd), "FxSpeed");
                 break;
             case EFSelect:
-                l = std::snprintf(lcd, sizeof(lcd), "Select");
+                l = std::snprintf(lcd, sizeof(lcd), "Select ");
                 break;
             case EFButtonLayer:
                 l = std::snprintf(lcd, sizeof(lcd), "Layer %i", buttonLayer + 1);
                 break;
             case EFBank:
-                l = std::snprintf(lcd, sizeof(lcd), "Bank %i", banks.current_ + 1);
+                l = std::snprintf(lcd, sizeof(lcd), "Bank %i ", banks.current_ + 1);
                 break;
             case EFPage:
-                l = std::snprintf(lcd, sizeof(lcd), "Page %i", lsStateRef_->page);
+                l = std::snprintf(lcd, sizeof(lcd), "Page %i ", lsStateRef_->page);
                 break;
             case EFNone:
                 break;
@@ -564,112 +577,145 @@ namespace LsMcuRemote {
         }
     }
 
+//    void Controller::MidiDevice::remapButtonActionLUT(){
+//
+//        buttonActionLUT_.clear();
+//
+//        ButtonLayer layer = currentButtonLayer();
+//
+//        for( auto & [mixerCommand, buttonAction] : layer){
+//
+//        }
+//    }
+//
+//    void Controller::MidiDevice::resteExecutorLUT(){
+//        executorLUT.clear();
+//
+//        ButtonLayer layer = currentButtonLayer();
+//
+//        for( ButtonAction &action : layer){
+//
+//        }
+//    }
+
+
+    const char * Controller::MidiDevice::mixerCommand2ButtonKeyLUT(MCU::mixer_command cmd){
+
+        static bool to_be_initialized = true;
+        static const char * LUT[127];
+
+        if (to_be_initialized){
+            to_be_initialized = false;
+
+            // default fill with nullptr
+            std::memset(LUT, 0, sizeof(LUT));
+
+
+            // let's make life a bit easier with these enum key -> string lookups
+
+#define SET_LUT(key) LUT[libremidi::to_underlying(MCU::mixer_command::key)] = #key;
+#define SET_LUT_0_7(key) \
+    SET_LUT(key ## _0)       \
+    SET_LUT(key ## _1)       \
+    SET_LUT(key ## _2)       \
+    SET_LUT(key ## _3)       \
+    SET_LUT(key ## _4)       \
+    SET_LUT(key ## _5)       \
+    SET_LUT(key ## _6)       \
+    SET_LUT(key ## _7)
+
+
+                SET_LUT_0_7(sel)
+                SET_LUT_0_7(mute)
+                SET_LUT_0_7(rec)
+                SET_LUT_0_7(solo)
+                SET_LUT_0_7(vpot_click)
+
+                SET_LUT(assign_track)
+                SET_LUT(assign_send)
+                SET_LUT(assign_pan)
+                SET_LUT(assign_plugin)
+                SET_LUT(assign_eq)
+                SET_LUT(assign_instrument)
+
+                SET_LUT(bank_left)
+                SET_LUT(bank_right)
+                SET_LUT(channel_left)
+                SET_LUT(channel_right)
+                SET_LUT(flip)
+                SET_LUT(global)
+
+                SET_LUT(name_value_button)
+                SET_LUT(smpte_beats_button)
+
+                SET_LUT(f1)
+                SET_LUT(f2)
+                SET_LUT(f3)
+                SET_LUT(f4)
+                SET_LUT(f5)
+                SET_LUT(f6)
+                SET_LUT(f7)
+                SET_LUT(f8)
+
+                SET_LUT(midi_tracks)
+                SET_LUT(inputs)
+                SET_LUT(audio_tracks)
+                SET_LUT(audio_instruments)
+                SET_LUT(aux)
+                SET_LUT(busses)
+                SET_LUT(outputs)
+                SET_LUT(user)
+
+                SET_LUT(shift)
+                SET_LUT(option)
+                SET_LUT(control)
+                SET_LUT(alt)
+
+                SET_LUT(save)
+                SET_LUT(undo)
+                SET_LUT(cancel)
+                SET_LUT(enter)
+
+                SET_LUT(markers)
+                SET_LUT(nudge)
+                SET_LUT(cycle)
+                SET_LUT(drop)
+                SET_LUT(replace)
+                SET_LUT(click)
+                SET_LUT(solo)
+
+                SET_LUT(rewind)
+                SET_LUT(forward)
+                SET_LUT(stop)
+                SET_LUT(play)
+                SET_LUT(record)
+
+                SET_LUT(up)
+                SET_LUT(down)
+                SET_LUT(left)
+                SET_LUT(right)
+                SET_LUT(zoom)
+                SET_LUT(scrub)
+
+                SET_LUT(user_switch_1)
+                SET_LUT(user_switch_2)
+
+
+#undef SET_LUT_0_7
+#undef SET_LUT
+        }
+
+        return LUT[libremidi::to_underlying(cmd)];
+    }
+
     Controller::MidiDevice::ButtonAction & Controller::MidiDevice::lookupButtonAction(MCU::mixer_command cmd){
 
         static ButtonAction NoAction{.fun = BFNone};
 
-        const char * lookup = nullptr;
+        const char * lookup = mixerCommand2ButtonKeyLUT(cmd);
 
-        // let's make life a bit easier with these enum key -> string lookups
-#define E_TO_STR(key) \
-    case mixer_command::key: \
-        lookup = #key; \
-        break;
-#define E_to_STR_0_7(key) \
-    E_TO_STR(key ## _0)       \
-    E_TO_STR(key ## _1)       \
-    E_TO_STR(key ## _2)       \
-    E_TO_STR(key ## _3)       \
-    E_TO_STR(key ## _4)       \
-    E_TO_STR(key ## _5)       \
-    E_TO_STR(key ## _6)       \
-    E_TO_STR(key ## _7)
-
-        switch (cmd){
-            E_to_STR_0_7(sel)
-            E_to_STR_0_7(mute)
-            E_to_STR_0_7(rec)
-            E_to_STR_0_7(solo)
-            E_to_STR_0_7(vpot_click)
-
-            E_TO_STR(assign_track)
-            E_TO_STR(assign_send)
-            E_TO_STR(assign_pan)
-            E_TO_STR(assign_plugin)
-            E_TO_STR(assign_eq)
-            E_TO_STR(assign_instrument)
-
-            E_TO_STR(bank_left)
-            E_TO_STR(bank_right)
-            E_TO_STR(channel_left)
-            E_TO_STR(channel_right)
-            E_TO_STR(flip)
-            E_TO_STR(global)
-
-            E_TO_STR(name_value_button)
-            E_TO_STR(smpte_beats_button)
-
-            E_TO_STR(f1)
-            E_TO_STR(f2)
-            E_TO_STR(f3)
-            E_TO_STR(f4)
-            E_TO_STR(f5)
-            E_TO_STR(f6)
-            E_TO_STR(f7)
-            E_TO_STR(f8)
-
-            E_TO_STR(midi_tracks)
-            E_TO_STR(inputs)
-            E_TO_STR(audio_tracks)
-            E_TO_STR(audio_instruments)
-            E_TO_STR(aux)
-            E_TO_STR(busses)
-            E_TO_STR(outputs)
-            E_TO_STR(user)
-
-            E_TO_STR(shift)
-            E_TO_STR(option)
-            E_TO_STR(control)
-            E_TO_STR(alt)
-
-            E_TO_STR(save)
-            E_TO_STR(undo)
-            E_TO_STR(cancel)
-            E_TO_STR(enter)
-
-            E_TO_STR(markers)
-            E_TO_STR(nudge)
-            E_TO_STR(cycle)
-            E_TO_STR(drop)
-            E_TO_STR(replace)
-            E_TO_STR(click)
-            E_TO_STR(solo)
-
-            E_TO_STR(rewind)
-            E_TO_STR(forward)
-            E_TO_STR(stop)
-            E_TO_STR(play)
-            E_TO_STR(record)
-
-            E_TO_STR(up)
-            E_TO_STR(down)
-            E_TO_STR(left)
-            E_TO_STR(right)
-            E_TO_STR(zoom)
-            E_TO_STR(scrub)
-
-            E_TO_STR(user_switch_1)
-            E_TO_STR(user_switch_2)
-
-            default:
-                break;
-        }
-
-#undef E_to_STR_0_7
-#undef E_TO_STR
-
-        if (lookup && sharedButtonLayers_->at(buttonLayer).contains(lookup))
-            return sharedButtonLayers_->at(buttonLayer).at(lookup);
+        if (lookup && currentButtonLayer().contains(lookup))
+            return currentButtonLayer().at(lookup);
 
         return NoAction;
     }
@@ -1311,11 +1357,15 @@ namespace LsMcuRemote {
                 if (action.target == MidiDevice::ButtonAction::kNoTarget)
                     return false;
 
-                int page = action.target / 100;
-                int column = action.target / 10 % 10;
-                int row = action.target % 10;
+                int page = action.target / 100 - 1;
+                int column = action.target / 10 % 10 - 1;
+                int row = action.target % 10 - 1;
 
-                lsProxy_.pressExecutor(page, column, row, pressed);
+                try {
+                    lsProxy_.pressExecutor(page, column, row, pressed);
+                } catch (std::exception e){
+                    std::cerr << "Error pressing executor: " << e.what() << std::endl;
+                }
             }
                 return true;
             case MidiDevice::BFExecutorRow:
@@ -1323,8 +1373,8 @@ namespace LsMcuRemote {
                 if (action.target == MidiDevice::ButtonAction::kNoTarget)
                     return false;
 
-                int page = action.target / 100;
-                int row = action.target % 10;
+                int page = action.target / 100 - 1;
+                int row = action.target % 10 - 1;
 
                 lsProxy_.pressExecutor(page, row, pressed);
             }
@@ -1351,6 +1401,7 @@ namespace LsMcuRemote {
 
             case MidiDevice::BFNone:
             default:
+                break;
         }
 
         return false;

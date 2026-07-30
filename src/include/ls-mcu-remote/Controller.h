@@ -190,9 +190,11 @@ namespace LsMcuRemote {
                      */
                     int encoderFunctionLUT_[EF_COUNT];
 
-                protected:
+//                    std::map<MCU::mixer_command, ButtonAction&> buttonActionLUT_;
+//
+//                    std::map<int,MCU::mixer_command> executorLUT;
 
-                    ButtonAction & lookupButtonAction(MCU::mixer_command cmd);
+                protected:
 
                     inline BankLayout & currentBank(){
                         return sharedBanks_->at(banks.current_);
@@ -206,6 +208,9 @@ namespace LsMcuRemote {
 
                     void start();
                     void stop();
+
+                    void reset();
+//                    void resetLcd();
 
                     void updateVPotLeds();
                     void updateVPotLed(int i);
@@ -234,6 +239,14 @@ namespace LsMcuRemote {
                     inline int lookupVPotIndex(EncoderFunction ef){
                         return encoderFunctionLUT_[ef];
                     }
+
+                    static const char * mixerCommand2ButtonKeyLUT(MCU::mixer_command cmd);
+//                    static const char * ButtonKey2LUT(MCU::mixer_command cmd);
+
+//                    void remapButtonActionLUT();
+                    ButtonAction & lookupButtonAction(MCU::mixer_command cmd);
+
+//                    void resetExecutorLUT();
 
 
 
