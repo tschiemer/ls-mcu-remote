@@ -593,7 +593,7 @@ The fields of a device object are as follows:
 
 Building the project standalone should be straightforward using cmake.
 
-Check out the files in [src/include/ls-mcu-remote](src/include/ls-mcu-remote) to get an idea of the interface. 
+Check out the files in [src/include/ls-mcu-remote](src/include/ls-mcu-remote) to get an idea of the interface.
 
 To use the library in your own projects you could (more or less) do as follows:
 
