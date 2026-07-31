@@ -117,6 +117,15 @@ void probeMidi(bool allowVirtual = false){
 #endif //LIBREMIDI
 }
 
+//https://stackoverflow.com/a/12774387
+inline bool exists_test1 (const std::string& name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
 
 int main(int argc, char * argv[]){
 
@@ -156,7 +165,8 @@ int main(int argc, char * argv[]){
 
     const char * configFile = argv[optind];
 
-    if (!std::filesystem::exists(configFile)){
+    // well, std::filesystem::exists can not be
+    if (!exists_test1(configFile)){
         fprintf(stderr, "Config file not found: %s\n", configFile);
         return EXIT_FAILURE;
     }

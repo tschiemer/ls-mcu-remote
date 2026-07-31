@@ -3,6 +3,11 @@ project(ls_mcu_remote)
 
 set(CMAKE_CXX_STANDARD 20)
 
+#if(APPLE)
+#    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+#    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Maximum macOS deployment target" FORCE)
+#endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(FetchContent)
@@ -12,11 +17,10 @@ include(ls-mcu-remote.json)
 include(ls-mcu-remote.libremidi)
 include(ls-mcu-remote.asio)
 
-
 include(ls-mcu-remote.version)
-
-
 make_version_src(${CMAKE_CURRENT_SOURCE_DIR}/src/core/version.cpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/core/version.cpp)
+
+
 
 add_library(lsmcuremote
         src/include/ls-mcu-remote/LsOscDef.h
