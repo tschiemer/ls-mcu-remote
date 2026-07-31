@@ -10,15 +10,22 @@ include(FetchContent)
 include(ls-mcu-remote.oscpp)
 include(ls-mcu-remote.json)
 include(ls-mcu-remote.libremidi)
-
 #include(ls-mcu-remote.asio)
 
 
+include(ls-mcu-remote.version)
+
+
+make_version_src(${CMAKE_CURRENT_SOURCE_DIR}/src/core/version.cpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/core/version.cpp)
 
 add_library(lsmcuremote
         src/include/ls-mcu-remote/LsOscDef.h
         src/include/ls-mcu-remote/LsProxy.h
-        src/core/LsProxy.cpp src/core/Controller.cpp src/include/ls-mcu-remote/Controller.h src/include/ls-mcu-remote/version.h)
+        src/core/LsProxy.cpp
+        src/include/ls-mcu-remote/Controller.h
+        src/core/Controller.cpp
+        src/include/ls-mcu-remote/version.h
+        src/core/version.cpp)
 target_include_directories(lsmcuremote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include/ls-mcu-remote)
 
 target_compile_definitions(lsmcuremote PUBLIC LIBREMIDI_COREMIDI)

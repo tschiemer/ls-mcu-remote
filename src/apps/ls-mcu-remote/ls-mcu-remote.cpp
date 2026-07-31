@@ -32,10 +32,36 @@
 #endif
 
 #include "Controller.h"
+#include "version.h"
 
 static char * argv0 = nullptr;
 
 static LsMcuRemote::Controller & controller = LsMcuRemote::Controller::getInstance();
+
+
+void help(){
+
+    printf(
+            "Usage: %s <path-to-config-file.json>\n"
+            "Usage: %s (-p|-h|-?)\n"
+            "\n"
+            "Controlling Lightshark remotely via a Mackie Control XT MIDI device\n"
+            "Please see config files for explanation of possible options.\n"
+            "\nOptions:\n"
+            "\t -h, -?        Prints this cute help\n"
+            "\t -p            Probe/list MIDI devices\n"
+            "\n"
+            "Thanks to:\n"
+            "libremidi: https://github.com/celtera/libremidi\n"
+            "OSCPP: https://github.com/kaoskorobase/oscpp\n"
+            "nlohmann::json: https://github.com/nlohmann/json\n"
+            "asio: https://github.com/chriskohlhoff/asio.git\n"
+            "\n"
+            "%s https://github.com/tschiemer/ls-mcu-remote"
+            , argv0, argv0,
+            LsMcuRemote::LIBRARY.data());
+}
+
 
 void probeMidi(bool allowVirtual = false){
 
@@ -88,25 +114,6 @@ void probeMidi(bool allowVirtual = false){
     }
 
 #endif //LIBREMIDI
-}
-
-void help(){
-
-    printf(
-            "Usage: %s <path-to-config-file.json>\n"
-            "Usage: %s (-p|-h|-?)\n"
-            "Controlling Lightshark remotely via a Mackie Control XT MIDI device\n"
-            "Please see config files for explanation of possible options.\n"
-            "\nOptions:\n"
-            "\t -h, -?        Prints this cute help\n"
-            "\t -p            Probe/list MIDI devices\n"
-            "\n"
-            "Thanks to:\n"
-            "libremidi: https://github.com/celtera/libremidi\n"
-            "OSCPP: https://github.com/kaoskorobase/oscpp\n"
-            "\n"
-            "https://github.com/tschiemer/ls-mcu-remote"
-            , argv0, argv0);
 }
 
 
