@@ -412,6 +412,8 @@ namespace LsMcuRemote {
 
         switch(bank[i]){
             case PlaybackId::PINone:
+                std::memcpy(lcd, "       ", sizeof(lcd));
+                l = 7;
                 break;
             case PlaybackId::PIGm:
                 l = std::snprintf(lcd, sizeof(lcd), "GM");

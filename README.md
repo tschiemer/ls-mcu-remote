@@ -4,19 +4,28 @@ Controlling Lightshark remotely via Mackie Control MIDI devices.
 Want to use a physical surface for lightshark and be physically placed anywhere?
 This software allows you to use standard MIDI MCU devices (with motorized faders) to remote control Lightshark (Cores).
 
-Platform independent libraries were used but was solely written and tested on macOS 15.7.7. So, might need some adjustments for other platforms.
-
 A library encompassing lightshark specific defines and a proxy interface are exposed and can be used in your own projects. Also see [building](#building).
+
+Platform independent libraries were used but was solely written and tested on macOS 15.7.7. So, might need some adjustments for other platforms.
 
 This software was quickly written to serve myself to the degree I need it upgrading existing hardware without any intention of further development.
 Pull requests for fixes or extensions generally welcome, bug reports ok but I may not bother to resolve anything, help yourself. 
 
 https://github.com/tschiemer/ls-mcu-remote
 
+# Dependency Note: Awaiting library patch
+
+Some pull request for the used library libremidi is still pending.
+
+In this code version some local changes were used not available here.
+
+In Effect: **this source code likely won't quite work for you (yet)** and will have to be fixed up a bit after the [pull request](https://github.com/celtera/libremidi/pull/235) has been merged.
+
 
 **Table of Contents**
 
 - [Using](#using)
+  - [Default config](#default-config)
 - [Known Lightshark Bug](#known-lightshark-bug)
 - [Configuration file](#configuration-file)
   - [Lightshark connection](#lightshark-connection)
@@ -28,7 +37,7 @@ https://github.com/tschiemer/ls-mcu-remote
 - [License](#license)
 
 
-## Using 
+## Using  
 
 ```
 Usage: ls-mcu-remote <path-to-config-file.json>
@@ -58,6 +67,103 @@ IN Port 0:X-Touch-Ext (X-TOUCH_INT), manufacturer BEHRINGER
 1 MIDI output sinks:
 OUT Port 0:X-Touch-Ext (X-TOUCH_INT), manufacturer BEHRINGER
 ```
+
+### Default config
+
+The default config file that comes with the project is configured as follows.
+
+**Lightshark**
+
+Likely you'll have to change the IP address of the lightshark device in your network.
+
+```json
+"lightshark": {
+    "ip": "10.0.0.10",
+    "port": 8000,
+    "remotePort": 9000
+  }
+```
+
+**Banks**
+
+| Bank #  | 0    | 1     | 2     | 3     | 4                  | 
+|---------|------|-------|-------|-------|--------------------|
+| Fader 1 | PB 1 | PB 9  | PB 17 | PB 25 | FX speed master    |
+| Fader 2 | PB 2 | PB 10 | PB 18 | PB 26 | FX size master     |
+| Fader 3 | PB 3 | PB 11 | PB 19 | PB 27 |                    |
+| Fader 4 | PB 4 | PB 12 | PB 20 | PB 28 | Chase speed master |
+| Fader 5 | PB 5 | PB 13 | PB 21 | PB 29 |                    |
+| Fader 6 | PB 6 | PB 14 | PB 22 | PB 30 |                    |
+| Fader 7 | PB 7 | PB 15 | PB 23 |       |                    |
+| Fader 8 | PB 8 | PB 16 | PB 24 |       | GM                 |
+| Fader 9 | GM   | GM    | GM    | GM    | GM                 |
+
+**Button layers**
+
+| Button   | Layer 1                  | Layer 2                  | Layer 3           |
+|----------|--------------------------|--------------------------|-------------------|
+| Vpot 1   | Clear                    | Clear                    | Clear             |
+| Vpot 2   | Rec                      | Rec                      | Rec               |
+| Vpot 3   | Find                     | Find                     | Find              |
+| Vpot 4   |                          |                          |                   |
+| Vpot 5   |                          |                          |                   |
+| Vpot 6   |                          |                          |                   |
+| Vpot 7   |                          |                          |                   |
+| Vpot 8   | Go to bank 4             | Go to bank 4             | Go to bank 4      |
+| Rec 1    | Executor 111             | Executor 211             | GO PB 1           |
+| Rec 2    | Executor 121             | Executor 211             | GO PB 2           |
+| Rec 3    | Executor 131             | Executor 211             | GO PB 3           |
+| Rec 4    | Executor 141             | Executor 211             | GO PB 4           |
+| Rec 5    | Executor 151             | Executor 211             | GO PB 5           |
+| Rec 6    | Executor 161             | Executor 211             | GO PB 6           |
+| Rec 7    | Executor 171             | Executor 211             | GO PB 7           |
+| Rec 8    | GO selected PB           | GO selected PB           | GO PB 8           |
+| Solo 1   | Executor 112             | Executor 212             | Previous Cue PB 1 |
+| Solo 2   | Executor 122             | Executor 212             | Previous Cue PB 2 |
+| Solo 3   | Executor 132             | Executor 212             | Previous Cue PB 3 |
+| Solo 4   | Executor 142             | Executor 212             | Previous Cue PB 4 |
+| Solo 5   | Executor 152             | Executor 212             | Previous Cue PB 5 |
+| Solo 6   | Executor 162             | Executor 212             | Previous Cue PB 6 |
+| Solo 7   | Executor 172             | Executor 212             | Previous Cue PB 7 |
+| Solo 8   | Previous Cue selected PB | Previous Cue selected PB | Previous Cue PB 8 |
+| Mute 1   | Executor 113             | Executor 213             | Release PB 1      |
+| Mute 2   | Executor 123             | Executor 213             | Release PB 2      |
+| Mute 3   | Executor 133             | Executor 213             | Release PB 3      |
+| Mute 4   | Executor 143             | Executor 213             | Release PB 4      |
+| Mute 5   | Executor 153             | Executor 213             | Release PB 5      |
+| Mute 6   | Executor 163             | Executor 213             | Release PB 6      |
+| Mute 7   | Executor 173             | Executor 213             | Release PB 7      |
+| Mute 8   | Release selected PB      | Release selected PB      | Release PB 8      |
+| Select 1 | Select PB 1              | Select PB 1              | Select PB 1       |
+| Select 2 | Select PB 2              | Select PB 2              | Select PB 2       |
+| Select 3 | Select PB 3              | Select PB 3              | Select PB 3       |
+| Select 4 | Select PB 4              | Select PB 4              | Select PB 4       |
+| Select 5 | Select PB 5              | Select PB 5              | Select PB 5       |
+| Select 6 | Select PB 6              | Select PB 6              | Select PB 6       |
+| Select 7 | Select PB 7              | Select PB 7              | Select PB 7       |
+| Select 8 | Select PB 8              | Select PB 8              | Select PB 8       |
+
+**Device**
+
+```json
+"X-TOUCH_INT":
+{
+"_comment": "the object* name is the midi port name which will be used to identify the device",
+
+"deviceType": "mackieControlXT",
+
+"banks" : {
+"fixed": false,
+"offset": 0
+},
+
+"buttonLayer": 0,
+
+"vpots" : ["encoder1", "encoder2", "encoder3", "encoder4", "select", "buttonLayer", "page", "bank"]
+}
+```
+
+
 
 ## Known Lightshark Bug
 
@@ -97,8 +203,7 @@ Basic structure as follows, some explanations below
 
     "vpot_click_0": {
       "fun": "clear"
-    },
-    ...
+    }
    }],
    
   "devices": {
@@ -153,14 +258,14 @@ The `bank` field must be an array of arrays of _8 or 9_ playback identifiers. Th
 Any per-device bank-specific configuration (fixed, offset, ..) is defined in the [device object](#device).
 
 
-| Playback identifiers | Meaning
-| ----------------------| ---
-| *null*               | No Playback assigned
-| `pbXY`               | Normal playback faders XY where XY is an integer in 1-30
-| `chase`              | Playback of chase speed master
-| `fxSize`             | Playback of FX size master
-| `fxSpeed`            | Playback of FX speed master
-| `gm`                 | grandmaster
+| Playback identifiers | Meaning                                                  |
+|----------------------|----------------------------------------------------------|
+| *null*               | No Playback assigned                                     |
+| `pbXY`               | Normal playback faders XY where XY is an integer in 1-30 |
+| `chase`              | Playback of chase speed master                           |
+| `fxSize`             | Playback of FX size master                               |
+| `fxSpeed`            | Playback of FX speed master                              |
+| `gm`                 | grandmaster                                              |
 
 ```json
 "banks": [
@@ -230,199 +335,197 @@ Functionality rather straightforward.
 
 A list of possible button keys follows. These match the buttons found on mackie control devices.
 
-| Button identifier | 
-| --- |
-|
-| vpot_click_0
-| vpot_click_1
-| vpot_click_2
-| vpot_click_3
-| vpot_click_4
-| vpot_click_5
-| vpot_click_6
-| vpot_click_7
-|
-| rec_0
-| rec_1
-| rec_2
-| rec_3
-| rec_4
-| rec_5
-| rec_6
-| rec_7
-|
-| solo_0
-| solo_1
-| solo_2
-| solo_3
-| solo_4
-| solo_5
-| solo_6
-| solo_7
-|
-| mute_0
-| mute_1
-| mute_2
-| mute_3
-| mute_4
-| mute_5
-| mute_6
-| mute_7
-|
-| sel_0
-| sel_1
-| sel_2
-| sel_3
-| sel_4
-| sel_5
-| sel_6
-| sel_7
-|
-| assign_track
-| assign_send
-| assign_pan
-| assign_plugin
-| assign_eq
-| assign_instrument
-|
-| bank_left
-| bank_right
-| channel_left
-| channel_right
-| flip
-| global
-|
-| name_value_button
-| smpte_beats_button
-|
-| f1
-| f2
-| f3
-| f4
-| f5
-| f6
-| f7
-| f8
-|
-| midi_tracks
-| inputs
-| audio_tracks
-| audio_instruments
-| aux
-| busses
-| outputs
-| user
-|
-| shift
-| option
-| control
-| alt
-|
-| save
-| undo
-| cancel
-| enter
-|
-| markers
-| nudge
-| cycle
-| drop
-| replace
-| click
-| solo
-|
-| rewind
-| forward
-| stop
-| play
-| record
-|
-| up
-| down
-| left
-| right
-| zoom
-| scrub
-|
-| user_switch_1
-| user_switch_2
-|
-| fader_touched_0
-| fader_touched_1
-| fader_touched_2
-| fader_touched_3
-| fader_touched_4
-| fader_touched_5
-| fader_touched_6
-| fader_touched_7
-| fader_touched_master
-|
-| smpte_led
-| beats_led
-| rude_solo_led
-|
-| relay_click
+| Button identifier    | 
+|----------------------|
+| vpot_click_0         |
+| vpot_click_1         |
+| vpot_click_2         |
+| vpot_click_3         |
+| vpot_click_4         |
+| vpot_click_5         |
+| vpot_click_6         |
+| vpot_click_7         |
+||
+| rec_0                |
+| rec_1                |
+| rec_2                |
+| rec_3                |
+| rec_4                |
+| rec_5                |
+| rec_6                |
+| rec_7                |
+||
+| solo_0               |
+| solo_1               |
+| solo_2               |
+| solo_3               |
+| solo_4               |
+| solo_5               |
+| solo_6               |
+| solo_7               |
+||
+| mute_0               |
+| mute_1               |
+| mute_2               |
+| mute_3               |
+| mute_4               |
+| mute_5               |
+| mute_6               |
+| mute_7               |
+||
+| sel_0                |
+| sel_1                |
+| sel_2                |
+| sel_3                |
+| sel_4                |
+| sel_5                |
+| sel_6                |
+| sel_7                |
+||
+| assign_track         |
+| assign_send          |
+| assign_pan           |
+| assign_plugin        |
+| assign_eq            |
+| assign_instrument    |
+||
+| bank_left            |
+| bank_right           |
+| channel_left         |
+| channel_right        |
+| flip                 |
+| global               |
+||
+| name_value_button    |
+| smpte_beats_button   |
+||
+| f1                   |
+| f2                   |
+| f3                   |
+| f4                   |
+| f5                   |
+| f6                   |
+| f7                   |
+| f8                   |
+||
+| midi_tracks          |
+| inputs               |
+| audio_tracks         |
+| audio_instruments    |
+| aux                  |
+| busses               |
+| outputs              |
+| user                 |
+||
+| shift                |
+| option               |
+| control              |
+| alt                  |
+||
+| save                 |
+| undo                 |
+| cancel               |
+| enter                |
+||
+| markers              |
+| nudge                |
+| cycle                |
+| drop                 |
+| replace              |
+| click                |
+| solo                 |
+||
+| rewind               |
+| forward              |
+| stop                 |
+| play                 |
+| record               |
+||
+| up                   |
+| down                 |
+| left                 |
+| right                |
+| zoom                 |
+| scrub                |
+||
+| user_switch_1        |
+| user_switch_2        |
+||
+| fader_touched_0      |
+| fader_touched_1      |
+| fader_touched_2      |
+| fader_touched_3      |
+| fader_touched_4      |
+| fader_touched_5      |
+| fader_touched_6      |
+| fader_touched_7      |
+| fader_touched_master |
+||
+| smpte_led            |
+| beats_led            |
+| rude_solo_led        |
+||
+| relay_click          |
 
 A list of possible actions follows, where no target is mentioned, none is needed. 
 
 Please note that all (or most) buttons with assigned functions will visually respond to being pressed.  In particular:
 - buttons bound to executors will show the executor state (any delay is due to sync interval)
 
-| Action identifier | Target  | 
-|----------------------------|--------|
-| pageUp                     |
-| pageDown                   |        
+| Action identifier | Target                                                                                                                                                                                                                                     | 
+|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| pageUp            |                                                                                                                                                                                                                                            |
+| pageDown          |                                                                                                                                                                                                                                            |
 ||
-| dbo                        |
+| dbo               |                                                                                                                                                                                                                                            |
 ||
-| edit                       |        
-| update                     |
-| delete                     |
-| copy                       |
-| move                       |
-| set                        |
-| fan                        |        
-|| 
-| clear                      |
-| rec                        |
-| find                       |
+| edit              |                                                                                                                                                                                                                                            |
+| update            |                                                                                                                                                                                                                                            |
+| delete            |                                                                                                                                                                                                                                            |
+| copy              |                                                                                                                                                                                                                                            |
+| move              |                                                                                                                                                                                                                                            |
+| set               |                                                                                                                                                                                                                                            |
+| fan               |                                                                                                                                                                                                                                            |
 ||
-| select                     |
+| clear             |                                                                                                                                                                                                                                            |
+| rec               |                                                                                                                                                                                                                                            |
+| find              |                                                                                                                                                                                                                                            |
 ||
-| go                         | If no target given corresponds to lightshark's master GO button (which is the GO button of the currently selected playback).
-|  | If a target (an integer offset in [0,7]) is given, the GO button belongs to the playback of the current bank with given offset (ex. if target = 0 and the current bank has playback 1 at offset 0, then it is the GO button of playback 1) 
-| release                    | like go
-| pause                      | like go
-| nextCue                    | like go
-| previousCue                | like go
-| tap                        | like go
+| select            |                                                                                                                                                                                                                                            |
 ||
-| selectFixture              |
-| selectGroup                |
-| selectNext                 |
-| selectPrevious             |
+| go                | If no target given corresponds to lightshark's master GO button (which is the GO button of the currently selected playback).                                                                                                               |
+|                   | If a target (an integer offset in [0,7]) is given, the GO button belongs to the playback of the current bank with given offset (ex. if target = 0 and the current bank has playback 1 at offset 0, then it is the GO button of playback 1) |
+| release           | like go                                                                                                                                                                                                                                    |
+| pause             | like go                                                                                                                                                                                                                                    |
+| nextCue           | like go                                                                                                                                                                                                                                    |
+| previousCue       | like go                                                                                                                                                                                                                                    |
+| tap               | like go                                                                                                                                                                                                                                    |
 ||
-| intensity                  |
-| position                   |
-| color                      |
-| beam                       |
-| advanced                   |
-| gobo                       |
-| fx                         |
+| selectFixture     |                                                                                                                                                                                                                                            |
+| selectGroup       |                                                                                                                                                                                                                                            |
+| selectNext        |                                                                                                                                                                                                                                            |
+| selectPrevious    |                                                                                                                                                                                                                                            |
 ||
-| chaseReset                 |
-| chaseTap                   |
-| fxSizeReset                |
-| fxSpeedReset               |
-| fxSpeedTap                 |
+| intensity         |                                                                                                                                                                                                                                            |
+| position          |                                                                                                                                                                                                                                            |
+| color             |                                                                                                                                                                                                                                            |
+| beam              |                                                                                                                                                                                                                                            |
+| advanced          |                                                                                                                                                                                                                                            |
+| gobo              |                                                                                                                                                                                                                                            |
+| fx                |                                                                                                                                                                                                                                            |
 ||
-| executor                   | Integer index of executor such that `target := 100 x page + 10 x column + row` (example: Page 1, Column 5, Row 2 -> 152)
-| executorRow                | Integer index of executor row such that `target := 100 x page + row` (example: Page 1,  Row 2 -> 102)
+| chaseReset        |                                                                                                                                                                                                                                            |
+| chaseTap          |                                                                                                                                                                                                                                            |
+| fxSizeReset       |                                                                                                                                                                                                                                            |
+| fxSpeedReset      |                                                                                                                                                                                                                                            |
+| fxSpeedTap        |                                                                                                                                                                                                                                            |
 ||
-| nextBank                   |
-| previousBank               |
-| selectBank                 | Index of bank to go to. ill memorize which was the last bank, if already at selected bank, will go to last. (useful to have a button to go to a master layer) 
-
+| executor          | Integer index of executor such that `target := 100 x page + 10 x column + row` (example: Page 1, Column 5, Row 2 -> 152)                                                                                                                   |
+| executorRow       | Integer index of executor row such that `target := 100 x page + row` (example: Page 1,  Row 2 -> 102)                                                                                                                                      |
+||
+| nextBank          |                                                                                                                                                                                                                                            |
+| previousBank      |                                                                                                                                                                                                                                            |
+| selectBank        | Index of bank to go to. ill memorize which was the last bank, if already at selected bank, will go to last. (useful to have a button to go to a master layer)                                                                              |
 
 ### Devices
 
@@ -446,33 +549,32 @@ The `devices` field is a mapped list where the device's portname that is used to
 
 The fields of a device object are as follows:
 
-| key        | description
-|------------| --- |
-| deviceType | (Optional) String value in `["logicControl","logicControlXT","mackieControl" (default),"mackieControlXT"]`
-|            | Note that if the type is wrong, it likely will not work.
-| banks.fixed | (Optional) boolean, `default = false`. If `true` bank can not be changed. If `false` will perform bank changes along with all other devices.
-| banks.offset | (Optional) int, `default = 0`. If given will use this bank offset (ex. a value of 1 will make it start at the second bank)
-| buttonLayer | (Optional) int, `default = 0`. If given will start at this button layer.
-| vpots | Required array of 8 elements of function Ids as defined below at VPOT Encoder Functions, the ith element will define the function of the ith encoder/vpot.
+| key          | description                                                                                                                                                |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| deviceType   | (Optional) String value in `["logicControl","logicControlXT","mackieControl" (default),"mackieControlXT"]`                                                 |
+|              | Note that if the type is wrong, it likely will not work.                                                                                                   |
+| banks.fixed  | (Optional) boolean, `default = false`. If `true` bank can not be changed. If `false` will perform bank changes along with all other devices.               |
+| banks.offset | (Optional) int, `default = 0`. If given will use this bank offset (ex. a value of 1 will make it start at the second bank)                                 |
+| buttonLayer  | (Optional) int, `default = 0`. If given will start at this button layer.                                                                                   |
+| vpots        | Required array of 8 elements of function Ids as defined below at VPOT Encoder Functions, the ith element will define the function of the ith encoder/vpot. |
 
 **VPot Encoder Functions**
 
-| Encoder function id | description
-|---------------------| ---
-| *null*            | No function
-| encoder1            | Lightshark encoder 1
-| encoder2            | 
-| encoder3            | 
-| encoder4            | 
-| grandmaster | Lightshark grandmaster
-| chase | Chase speed master
-| fxSize | FX size master
-| fxSpeed | FX speed master
-| select | Select previous or next fixture/group (like the lightshark buttons previous/next)
-| bank | Bank up or down
-| page | Lightshark page up or down
-| buttonLayer | Change this devices button layer to previous or next 
-
+| Encoder function id | description                                                                       |
+|---------------------|-----------------------------------------------------------------------------------|
+| *null*              | No function                                                                       |
+| encoder1            | Lightshark encoder 1                                                              |
+| encoder2            |                                                                                   |
+| encoder3            |                                                                                   |
+| encoder4            |                                                                                   |
+| grandmaster         | Lightshark grandmaster                                                            |
+| chase               | Chase speed master                                                                |
+| fxSize              | FX size master                                                                    |
+| fxSpeed             | FX speed master                                                                   |
+| select              | Select previous or next fixture/group (like the lightshark buttons previous/next) |
+| bank                | Bank up or down                                                                   |
+| page                | Lightshark page up or down                                                        |
+| buttonLayer         | Change this devices button layer to previous or next                              |
 
 ## Building
 
@@ -498,6 +600,8 @@ target_link_libraries(my-target-woot PUBLIC ls-mcu-remote::lsmcuremote)
 
 
 ## Third Party Libraries
+
+Many thanks to all the people who in one way or other have contributed to the following libraries used in this project:
 
 - [libremidi](https://github.com/celtera/libremidi)
 - [oscpp](https://github.com/kaoskorobase/oscpp)

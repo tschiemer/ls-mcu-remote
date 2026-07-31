@@ -9,7 +9,7 @@
     ["pb9","pb10","pb11","pb12","pb13","pb14","pb15","pb16","gm"],
     ["pb17","pb18","pb19","pb20","pb21","pb22","pb23","pb24","gm"],
     ["pb25","pb26","pb27","pb28","pb29","pb30", null, null, "gm"],
-    ["chase", "fxSize", "fxSpeed", null, null, null, null,"gm","gm"]
+    ["fxSpeed", "fxSize", null, "chase", null, null, null,"gm","gm"]
   ],
 
   "buttonLayers": [{
@@ -24,10 +24,10 @@
       "fun": "find"
     },
     "vpot_click_3": {
-      "fun": "selectNext"
+      "fun": null
     },
     "vpot_click_4": {
-      "fun": "selectPrevious"
+      "fun": null
     },
     "vpot_click_5": {
       "fun": null
@@ -168,17 +168,326 @@
       "fun": "select",
       "target": 7
     }
-  },
-    {
-      "sel_0": {
-        "fun": "clear"
-      }
+  },{
+
+    "vpot_click_0": {
+      "fun": "clear"
+    },
+    "vpot_click_1": {
+      "fun": "rec"
+    },
+    "vpot_click_2": {
+      "fun": "find"
+    },
+    "vpot_click_3": {
+      "fun": null
+    },
+    "vpot_click_4": {
+      "fun": null
+    },
+    "vpot_click_5": {
+      "fun": null
+    },
+    "vpot_click_6": {
+      "fun": null
+    },
+    "vpot_click_7": {
+      "fun": "selectBank",
+      "target": 4
+    },
+
+    "rec_0": {
+      "fun": "executor",
+      "target": 211
+    },
+    "rec_1": {
+      "fun": "executor",
+      "target": 221
+    },
+    "rec_2": {
+      "fun": "executor",
+      "target": 231
+    },
+    "rec_3": {
+      "fun": "executor",
+      "target": 241
+    },
+    "rec_4": {
+      "fun": "executor",
+      "target": 251
+    },
+    "rec_5": {
+      "fun": "executor",
+      "target": 261
+    },
+    "rec_6": {
+      "fun": "executor",
+      "target": 271
+    },
+    "rec_7": {
+      "fun": "go"
+    },
+
+    "solo_0": {
+      "fun": "executor",
+      "target": 212
+    },
+    "solo_1": {
+      "fun": "executor",
+      "target": 222
+    },
+    "solo_2": {
+      "fun": "executor",
+      "target": 232
+    },
+    "solo_3": {
+      "fun": "executor",
+      "target": 242
+    },
+    "solo_4": {
+      "fun": "executor",
+      "target": 252
+    },
+    "solo_5": {
+      "fun": "executor",
+      "target": 252
+    },
+    "solo_6": {
+      "fun": "executor",
+      "target": 262
+    },
+    "solo_7": {
+      "fun": "previousCue"
+    },
+
+    "mute_0": {
+      "fun": "executor",
+      "target": 213
+    },
+    "mute_1": {
+      "fun": "executor",
+      "target": 223
+    },
+    "mute_2": {
+      "fun": "executor",
+      "target": 233
+    },
+    "mute_3": {
+      "fun": "executor",
+      "target": 243
+    },
+    "mute_4": {
+      "fun": "executor",
+      "target": 253
+    },
+    "mute_5": {
+      "fun": "executor",
+      "target": 263
+    },
+    "mute_6": {
+      "fun": "executor",
+      "target": 273
+    },
+    "mute_7": {
+      "fun": "release"
+    },
+
+    "sel_0": {
+      "fun": "select",
+      "target": 0
+    },
+    "sel_1": {
+      "fun": "select",
+      "target": 1
+    },
+    "sel_2": {
+      "fun": "select",
+      "target": 2
+    },
+    "sel_3": {
+      "fun": "select",
+      "target": 3
+    },
+    "sel_4": {
+      "fun": "select",
+      "target": 4
+    },
+    "sel_5": {
+      "fun": "select",
+      "target": 5
+    },
+    "sel_6": {
+      "fun": "select",
+      "target": 6
+    },
+    "sel_7": {
+      "fun": "select",
+      "target": 7
     }
+  },{
+
+    "vpot_click_0": {
+      "fun": "clear"
+    },
+    "vpot_click_1": {
+      "fun": "rec"
+    },
+    "vpot_click_2": {
+      "fun": "find"
+    },
+    "vpot_click_3": {
+      "fun": null
+    },
+    "vpot_click_4": {
+      "fun": null
+    },
+    "vpot_click_5": {
+      "fun": null
+    },
+    "vpot_click_6": {
+      "fun": null
+    },
+    "vpot_click_7": {
+      "fun": "selectBank",
+      "target": 4
+    },
+
+    "rec_0": {
+      "fun": "go",
+      "target": 0
+    },
+    "rec_1": {
+      "fun": "go",
+      "target": 1
+    },
+    "rec_2": {
+      "fun": "go",
+      "target": 2
+    },
+    "rec_3": {
+      "fun": "go",
+      "target": 3
+    },
+    "rec_4": {
+      "fun": "go",
+      "target": 4
+    },
+    "rec_5": {
+      "fun": "go",
+      "target": 5
+    },
+    "rec_6": {
+      "fun": "go",
+      "target": 6
+    },
+    "rec_7": {
+      "fun": "go",
+      "target": 7
+    },
+
+    "solo_0": {
+      "fun": "previousCue",
+      "target": 0
+    },
+    "solo_1": {
+      "fun": "previousCue",
+      "target": 1
+    },
+    "solo_2": {
+      "fun": "previousCue",
+      "target": 2
+    },
+    "solo_3": {
+      "fun": "previousCue",
+      "target": 3
+    },
+    "solo_4": {
+      "fun": "previousCue",
+      "target": 4
+    },
+    "solo_5": {
+      "fun": "previousCue",
+      "target": 5
+    },
+    "solo_6": {
+      "fun": "previousCue",
+      "target": 6
+    },
+    "solo_7": {
+      "fun": "previousCue",
+      "target": 7
+    },
+
+    "mute_0": {
+      "fun": "release",
+      "target": 0
+    },
+    "mute_1": {
+      "fun": "release",
+      "target": 1
+    },
+    "mute_2": {
+      "fun": "release",
+      "target": 2
+    },
+    "mute_3": {
+      "fun": "release",
+      "target": 3
+    },
+    "mute_4": {
+      "fun": "release",
+      "target": 4
+    },
+    "mute_5": {
+      "fun": "release",
+      "target": 5
+    },
+    "mute_6": {
+      "fun": "release",
+      "target": 6
+    },
+    "mute_7": {
+      "fun": "release",
+      "target": 7
+    },
+
+    "sel_0": {
+      "fun": "select",
+      "target": 0
+    },
+    "sel_1": {
+      "fun": "select",
+      "target": 1
+    },
+    "sel_2": {
+      "fun": "select",
+      "target": 2
+    },
+    "sel_3": {
+      "fun": "select",
+      "target": 3
+    },
+    "sel_4": {
+      "fun": "select",
+      "target": 4
+    },
+    "sel_5": {
+      "fun": "select",
+      "target": 5
+    },
+    "sel_6": {
+      "fun": "select",
+      "target": 6
+    },
+    "sel_7": {
+      "fun": "select",
+      "target": 7
+    }
+  }
   ],
   "devices": {
     "X-TOUCH_INT":
     {
-
     "_comment": "the object* name is the midi port name which will be used to identify the device",
 
     "deviceType": "mackieControlXT",
@@ -188,7 +497,7 @@
       "offset": 0
     },
 
-    "buttonLayer_asdf": 0,
+    "buttonLayer": 0,
 
     "vpots" : ["encoder1", "encoder2", "encoder3", "encoder4", "select", "buttonLayer", "page", "bank"]
   }
