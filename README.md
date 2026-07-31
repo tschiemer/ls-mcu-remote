@@ -4,7 +4,9 @@ Controlling Lightshark remotely via Mackie Control MIDI devices.
 Want to use a physical surface for lightshark and be physically placed anywhere?
 This software allows you to use standard MIDI MCU devices (with motorized faders) to remote control Lightshark (Cores).
 
-Platform independet libraries were used but was solely written and tested on macOS 15.7.7. So, might need some adjustments for other platforms.
+Platform independent libraries were used but was solely written and tested on macOS 15.7.7. So, might need some adjustments for other platforms.
+
+A library encompassing lightshark specific defines and a proxy interface are exposed and can be used in your own projects. Also see [building](#building).
 
 This software was quickly written to serve myself to the degree I need it upgrading existing hardware without any intention of further development.
 Pull requests for fixes or extensions generally welcome, bug reports ok but I may not bother to resolve anything, help yourself. 
@@ -476,7 +478,9 @@ The fields of a device object are as follows:
 
 Building the project standalone should be straightforward using cmake.
 
-A library interface is exposed and it should be possible to include it easoly as follows (more or less)
+Check out the files in [src/include/ls-mcu-remote](src/include/ls-mcu-remote) to get an idea of the interface. 
+
+To use the library in your own projects you could (more or less) do as follows:
 
 ```cmake
 

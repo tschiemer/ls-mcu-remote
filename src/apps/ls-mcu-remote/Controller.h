@@ -22,7 +22,7 @@
 #include <iostream>
 #include <map>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include <libremidi/libremidi.hpp>
 #include <libremidi/protocols/remote_control.hpp>
