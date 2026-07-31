@@ -168,7 +168,12 @@
       "fun": "select",
       "target": 7
     }
-  }
+  },
+    {
+      "sel_0": {
+        "fun": "clear"
+      }
+    }
   ],
   "devices": {
     "X-TOUCH_INT":

@@ -265,6 +265,13 @@ namespace LsMcuRemote {
                     void gotoBank(int bank);
                     void changeBank(int upOrDown);
 
+                    void clearAllButtons();
+                    void clearUsedButtons();
+                    void setActiveButtons();
+
+                    void gotoButtonLayer(int layer);
+                    void changeButtonLayer(int upOrDown);
+
                     inline PlaybackId lookupPlaybackId(int fader) {
                         return currentBank().at(fader);
                     }

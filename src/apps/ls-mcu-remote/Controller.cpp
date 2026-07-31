@@ -159,6 +159,7 @@ namespace LsMcuRemote {
 
         for(int i = 0; i < vpots.size(); i++)
             encoderFunctionLUT_[vpots[i]] = i;
+
     }
 
     void Controller::MidiDevice::start(){
@@ -169,7 +170,7 @@ namespace LsMcuRemote {
 
         mcuRef_->start();
 
-
+        clearAllButtons();
 
     }
 
@@ -205,6 +206,8 @@ namespace LsMcuRemote {
         updatePbLevels();
 
         updateVPotLeds();
+
+        setActiveButtons();
 
     }
 
@@ -517,9 +520,9 @@ namespace LsMcuRemote {
         int target = ButtonAction::executorTarget(page, col, row);
         auto lut = currentExecutorLUT();
 
-        if (is_active){
-            std::cerr << "executor " << target << std::endl;
-        }
+//        if (is_active){
+//            std::cerr << "executor " << target << std::endl;
+//        }
 
         if (!lut.contains(target))
             return;
@@ -569,6 +572,188 @@ namespace LsMcuRemote {
         int target = banks.current_ + upOrDown;
 
         gotoBank(target);
+    }
+
+    void Controller::MidiDevice::clearAllButtons(){
+
+        static MCU::mixer_command buttons[] = {
+
+                MCU::mixer_command::vpot_click_0,
+                MCU::mixer_command::vpot_click_1,
+                MCU::mixer_command::vpot_click_2,
+                MCU::mixer_command::vpot_click_3,
+                MCU::mixer_command::vpot_click_4,
+                MCU::mixer_command::vpot_click_5,
+                MCU::mixer_command::vpot_click_6,
+                MCU::mixer_command::vpot_click_7,
+
+                MCU::mixer_command::rec_0,
+                MCU::mixer_command::rec_1,
+                MCU::mixer_command::rec_2,
+                MCU::mixer_command::rec_3,
+                MCU::mixer_command::rec_4,
+                MCU::mixer_command::rec_5,
+                MCU::mixer_command::rec_6,
+                MCU::mixer_command::rec_7,
+
+                MCU::mixer_command::solo_0,
+                MCU::mixer_command::solo_1,
+                MCU::mixer_command::solo_2,
+                MCU::mixer_command::solo_3,
+                MCU::mixer_command::solo_4,
+                MCU::mixer_command::solo_5,
+                MCU::mixer_command::solo_6,
+                MCU::mixer_command::solo_7,
+
+                MCU::mixer_command::mute_0,
+                MCU::mixer_command::mute_1,
+                MCU::mixer_command::mute_2,
+                MCU::mixer_command::mute_3,
+                MCU::mixer_command::mute_4,
+                MCU::mixer_command::mute_5,
+                MCU::mixer_command::mute_6,
+                MCU::mixer_command::mute_7,
+
+                MCU::mixer_command::sel_0,
+                MCU::mixer_command::sel_1,
+                MCU::mixer_command::sel_2,
+                MCU::mixer_command::sel_3,
+                MCU::mixer_command::sel_4,
+                MCU::mixer_command::sel_5,
+                MCU::mixer_command::sel_6,
+                MCU::mixer_command::sel_7,
+
+                MCU::mixer_command::assign_track,
+                MCU::mixer_command::assign_send,
+                MCU::mixer_command::assign_pan,
+                MCU::mixer_command::assign_plugin,
+                MCU::mixer_command::assign_eq,
+                MCU::mixer_command::assign_instrument,
+
+                MCU::mixer_command::bank_left,
+                MCU::mixer_command::bank_right,
+                MCU::mixer_command::channel_left,
+                MCU::mixer_command::channel_right,
+                MCU::mixer_command::flip,
+                MCU::mixer_command::global,
+
+                MCU::mixer_command::name_value_button,
+                MCU::mixer_command::smpte_beats_button,
+
+                MCU::mixer_command::f1,
+                MCU::mixer_command::f2,
+                MCU::mixer_command::f3,
+                MCU::mixer_command::f4,
+                MCU::mixer_command::f5,
+                MCU::mixer_command::f6,
+                MCU::mixer_command::f7,
+                MCU::mixer_command::f8,
+
+                MCU::mixer_command::midi_tracks,
+                MCU::mixer_command::inputs,
+                MCU::mixer_command::audio_tracks,
+                MCU::mixer_command::audio_instruments,
+                MCU::mixer_command::aux,
+                MCU::mixer_command::busses,
+                MCU::mixer_command::outputs,
+                MCU::mixer_command::user,
+
+                MCU::mixer_command::shift,
+                MCU::mixer_command::option,
+                MCU::mixer_command::control,
+                MCU::mixer_command::alt,
+
+                MCU::mixer_command::save,
+                MCU::mixer_command::undo,
+                MCU::mixer_command::cancel,
+                MCU::mixer_command::enter,
+
+                MCU::mixer_command::markers,
+                MCU::mixer_command::nudge,
+                MCU::mixer_command::cycle,
+                MCU::mixer_command::drop,
+                MCU::mixer_command::replace,
+                MCU::mixer_command::click,
+                MCU::mixer_command::solo,
+
+                MCU::mixer_command::rewind,
+                MCU::mixer_command::forward,
+                MCU::mixer_command::stop,
+                MCU::mixer_command::play,
+                MCU::mixer_command::record,
+
+                MCU::mixer_command::up,
+                MCU::mixer_command::down,
+                MCU::mixer_command::left,
+                MCU::mixer_command::right,
+                MCU::mixer_command::zoom,
+                MCU::mixer_command::scrub,
+
+                MCU::mixer_command::user_switch_1,
+                MCU::mixer_command::user_switch_2,
+
+                MCU::mixer_command::fader_touched_0,
+                MCU::mixer_command::fader_touched_1,
+                MCU::mixer_command::fader_touched_2,
+                MCU::mixer_command::fader_touched_3,
+                MCU::mixer_command::fader_touched_4,
+                MCU::mixer_command::fader_touched_5,
+                MCU::mixer_command::fader_touched_6,
+                MCU::mixer_command::fader_touched_7,
+                MCU::mixer_command::fader_touched_master,
+
+                MCU::mixer_command::smpte_led,
+                MCU::mixer_command::beats_led,
+                MCU::mixer_command::rude_solo_led,
+
+                MCU::mixer_command::relay_click
+        };
+
+        for(MCU::mixer_command cmd : buttons)
+            mcuRef_->command(cmd, false);
+    }
+
+    void Controller::MidiDevice::clearUsedButtons(){
+        ButtonLayer layer = currentButtonLayer();
+
+        for(auto & [key,action] : layer){
+            MCU::mixer_command cmd = buttonKey2MixerCommandLUT(key);
+            mcuRef_->command(cmd, false);
+        }
+
+    }
+
+    void Controller::MidiDevice::setActiveButtons(){
+        auto lut = currentExecutorLUT();
+        for (auto [target, cmd] : lut){
+            int page, col, row;
+            ButtonAction::executorTarget(target, page, col, row);
+            bool is_active = lsStateRef_->executors[page][col][row];
+            mcuRef_->command(cmd, is_active);
+        }
+    }
+
+    void Controller::MidiDevice::gotoButtonLayer(int layer){
+
+        // sanity check
+        if (layer < 0 || sharedData_->buttonLayers.size() <= layer)
+            return;
+
+        clearUsedButtons();
+
+        buttonLayer = layer;
+
+        updateVPotLcd();
+        setActiveButtons();
+    }
+
+    void Controller::MidiDevice::changeButtonLayer(int upOrDown){
+        if (upOrDown  == 0)
+            return;
+
+        int target = buttonLayer + upOrDown;
+
+        gotoButtonLayer(target);
     }
 
 
@@ -1372,6 +1557,7 @@ namespace LsMcuRemote {
                 changePage(relativeValue);
                 break;
             case EF::EFButtonLayer:
+                midiDevice.changeButtonLayer(relativeValue);
                 break;
             case EF::EFNone:
                 break;
