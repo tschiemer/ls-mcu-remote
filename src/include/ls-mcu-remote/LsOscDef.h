@@ -125,6 +125,7 @@ namespace LsMcuRemote {
         PreviousCue,
         NextCue,
         Pause,
+        Tap
     };
 
     enum class Submasters : uint8_t {
@@ -272,6 +273,13 @@ namespace LsMcuRemote {
      * $pressed 1 (pressed), 0 (released)
      */
     constexpr char kLsOscPlaybackPause_Int[] = "/LS/Pause/PB/%i";
+
+    /**
+     * "/LS/TAP/PB/$i $pressed"
+     * $i       1 - 30
+     * $pressed 1 (pressed), 0 (released)
+     */
+    constexpr char kLsOscPlaybackTap_Int[] = "/LS/TAP/PB/%i";
 
     /**
      * "/LS/Go/Main $pressed"
@@ -478,13 +486,6 @@ namespace LsMcuRemote {
      * $pressed 1 (pressed), 0 (released)
      */
     constexpr char kLsOscReleaseAll[] = "/LS/StopAll";
-
-    /**
-     * "/LS/TAP/PB/$playback $pressed"
-     * $playback    1 - 30
-     * $pressed 1 (pressed), 0 (released)
-     */
-    constexpr char kLsOscPlaybackTap_Int[] = "/LS/TAP/PB/%i";
 
     /** Playback TAP
      *

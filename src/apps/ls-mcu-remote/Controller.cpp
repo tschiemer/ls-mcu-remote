@@ -1460,6 +1460,12 @@ namespace LsMcuRemote {
                 else
                     lsProxy_.pressPlaybackButton(PlaybackButtons::PreviousCue, action.target, pressed);
                 return true;
+            case MidiDevice::BFTap:
+                // this function requires a target
+                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+                    return false;
+                lsProxy_.pressPlaybackButton(PlaybackButtons::Tap, action.target, pressed);
+                return true;
 
 
             case MidiDevice::BFSelectFixture:

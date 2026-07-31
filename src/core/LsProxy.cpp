@@ -694,6 +694,9 @@ namespace LsMcuRemote {
                 case PlaybackButtons::Pause:
                     cmd = const_cast<char*>(kLsOscPlaybackPause_Int);
                     break;
+                case PlaybackButtons::Tap:
+                    cmd = const_cast<char*>(kLsOscPlaybackTap_Int);
+                    break;
             }
 
             std::snprintf(addr, sizeof(addr), cmd,
