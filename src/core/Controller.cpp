@@ -853,23 +853,35 @@ namespace LsMcuRemote {
 
 
     void Controller::Data::init(){
-        initExecutorLayerLUT();
+        initButtonLayerLUTs();
     }
 
-    void Controller::Data::initExecutorLayerLUT(){
+    void Controller::Data::initButtonLayerLUTs(){
         executorsPerLayerLUT_.clear();
+        tapPerLayerLUT_.clear();
 
         for (MidiDevice::ButtonLayer & layer : buttonLayers){
 
-            std::map<int, MCU::mixer_command> lut;
+            std::map<int, MCU::mixer_command> executorLUT;
+            TapAssignment tapLUT;
 
             for(auto & [cmdKey, buttonAction] : layer){
-                if (buttonAction.fun == MidiDevice::BFExecutor){
-                        lut[buttonAction.target] = MidiDevice::buttonKey2MixerCommandLUT(cmdKey);
+                switch(buttonAction.fun){
+                    case MidiDevice::BFExecutor:
+                        executorLUT[buttonAction.target] = MidiDevice::buttonKey2MixerCommandLUT(cmdKey);
+                        break;
+                    case MidiDevice::BFChaseSpeedMasterTap:
+                        tapLUT.chaseSpeed = MidiDevice::buttonKey2MixerCommandLUT(cmdKey);
+                        break;
+                    case MidiDevice::BFFxSpeedMasterTap:
+                        tapLUT.fxSpeed = MidiDevice::buttonKey2MixerCommandLUT(cmdKey);
+                        break;
+                    default:
+                        break;
                 }
             }
 
-            executorsPerLayerLUT_.push_back(lut);
+            executorsPerLayerLUT_.push_back(executorLUT);
         }
     }
 

@@ -176,7 +176,7 @@
 
     "_comment": "the object* name is the midi port name which will be used to identify the device",
 
-    "deviceType": 15,
+    "deviceType": "mackieControlXT",
 
     "banks" : {
       "fixed": false,
