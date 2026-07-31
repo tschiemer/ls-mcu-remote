@@ -39,6 +39,14 @@ Options:
 	 -h, -?        Prints this cute help
 	 -p            Probe/list MIDI devices
 
+Thanks to:
+libremidi: https://github.com/celtera/libremidi
+OSCPP: https://github.com/kaoskorobase/oscpp
+nlohmann::json: https://github.com/nlohmann/json
+asio: https://github.com/chriskohlhoff/asio.git
+
+ls-mcu-remote-0.1.0
+https://github.com/tschiemer/ls-mcu-remote
 ```
 
 Example `ls-mcu-remote -p` output (use the value in the brackets `X-TOUCH_INT` for the config file):

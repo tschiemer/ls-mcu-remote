@@ -15,7 +15,7 @@ function(make_version_src _template_in _src_out)
     string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+(.*)" "\\1" VERSION_SHA1 "${VERSION}")
     set(VERSION_SHORT "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
-    message(STATUS "version: ${VERSION} (${VERSION_SHORT})")
+    message(STATUS "git version: ${VERSION} (${VERSION_SHORT})")
 
     configure_file(${_template_in} ${_src_out})
     set(VERSION_SRC ${_src_out})

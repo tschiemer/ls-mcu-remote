@@ -57,7 +57,8 @@ void help(){
             "nlohmann::json: https://github.com/nlohmann/json\n"
             "asio: https://github.com/chriskohlhoff/asio.git\n"
             "\n"
-            "%s https://github.com/tschiemer/ls-mcu-remote"
+            "%s\n"
+            "https://github.com/tschiemer/ls-mcu-remote\n"
             , argv0, argv0,
             LsMcuRemote::LIBRARY.data());
 }
