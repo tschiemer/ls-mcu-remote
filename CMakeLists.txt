@@ -10,7 +10,7 @@ include(FetchContent)
 include(ls-mcu-remote.oscpp)
 include(ls-mcu-remote.json)
 include(ls-mcu-remote.libremidi)
-#include(ls-mcu-remote.asio)
+include(ls-mcu-remote.asio)
 
 
 include(ls-mcu-remote.version)
@@ -27,7 +27,7 @@ add_library(lsmcuremote
 target_include_directories(lsmcuremote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include/ls-mcu-remote)
 
 target_compile_definitions(lsmcuremote PUBLIC LIBREMIDI_COREMIDI)
-target_link_libraries(lsmcuremote PUBLIC oscpp::oscpp nlohmann_json::nlohmann_json libremidi::libremidi)
+target_link_libraries(lsmcuremote PUBLIC oscpp::oscpp nlohmann_json::nlohmann_json libremidi::libremidi asio)
 
 
 add_executable(ls-mcu-remote

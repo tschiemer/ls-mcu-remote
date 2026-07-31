@@ -78,7 +78,7 @@ Likely you'll have to change the IP address of the lightshark device in your net
 
 ```json
 "lightshark": {
-    "ip": "10.0.0.10",
+    "host": "10.0.0.10",
     "port": 8000,
     "remotePort": 9000,
     "syncIntervalMs": 100
@@ -199,7 +199,7 @@ Basic structure as follows, some explanations below
 ```json
 {
   "lightshark": {
-    "ip": "10.0.0.10",
+    "host": "10.0.0.10",
     "port": 8000,
     "remotePort": 9000
   },
@@ -242,7 +242,7 @@ Basic structure as follows, some explanations below
 
 ```json
 "lightshark": {
-  "ip": "10.0.0.10",
+  "host": "10.0.0.10",
   "port": 8000,
   "remotePort": 9000
 }

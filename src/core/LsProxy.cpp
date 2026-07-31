@@ -56,45 +56,42 @@ namespace LsMcuRemote {
 
     void LsProxy::runloopUdpReceiver(){
 
+        using asio::ip::udp;
+
         state_ = State::Running;
 
         char buffer[kUdpReceiveBufferSize];
-        struct sockaddr_in cliaddr;
-        socklen_t len;
-        int n;
 
         while (state_ == State::Running){
 
-            len = sizeof(cliaddr);  //len is value/result
+            udp::endpoint sender_endpoint;
 
-            memset(&cliaddr, 0, sizeof(cliaddr));
+            size_t length = 0;
 
-            if ((n = recvfrom(sockfd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &cliaddr, &len)) < 0){
+            try {
+                length = net_.udp_socket->receive_from(asio::buffer(buffer, sizeof(buffer)), sender_endpoint);
+            } catch (asio::system_error e) {
 
-                // if timeout, just ignore
-                if (errno == EAGAIN){
-                    // do nothing
-                } else {
-                    std::cerr << "unknpown socket error, stopping" << errno << std::endl;
+                if (state_ == State::Stopping)
+                    continue;
 
-                    // stop loop and end thread
-                    state_ = State::Stopping;
-                }
-            } else {
-
-//                std::cerr << "Rx " << n << std::endl;
-
-                try {
-                    OSCPP::Server::Packet packet(buffer,n);
-
-                    handleOscPacket(packet);
-
-                } catch (std::exception e){
-                    std::cerr << "couldnt handle OSC packet: " << e.what() << std::endl;
-                }
+                std::cerr << "Error while receiving UDP: " << e.what() << std::endl;
+                state_ = State::Stopping;
+                continue;
             }
 
-        }
+//            std::cerr << "Rx " << length << std::endl;
+
+            if (length <= 0)
+                continue;
+
+            try {
+                OSCPP::Server::Packet packet(buffer, length);
+                handleOscPacket(packet);
+            } catch(std::exception e){
+                std::cerr << "Error handling OSC msg: " << e.what() << std::endl;
+            }
+        } // while Running
     }
 
     void LsProxy::handleOscPacket(OSCPP::Server::Packet packet){
@@ -271,25 +268,42 @@ namespace LsMcuRemote {
 
     }
 
+    void LsProxy::initUdp(){
+
+        using asio::ip::udp;
+
+        try {
+            net_.udp_socket = new udp::socket(net_.io_context ,udp::endpoint(udp::v4(), config_.localPort));
+        } catch (asio::system_error e) {
+            std::cerr << "Error while binding to port " << config_.localPort << ": " <<  e.what() <<  " / errno " << errno << std::endl;
+            throw e;
+        }
+
+        udp::resolver resolver(net_.io_context);
+        std::string portStr = std::to_string(config_.lightsharkPort);
+
+        try {
+            net_.udp_ls_endpoint = *resolver.resolve(udp::v4(), config_.lightsharkHost, portStr).begin();
+        } catch(asio::system_error e) {
+            std::cerr << "Error while resolving: " << e.what() << std::endl;
+        }
+    }
+
+
+    void LsProxy::deinitUdp(){
+        // ?
+    }
+
     void LsProxy::sendUdp(void * data, size_t size){
 
-//        std::cout << "sendto " << config_.lightsharkHostIp << ":" << config_.lightsharkPort << std::endl;
+//        std::cout << "sendto " << config_.lightsharkHost << ":" << config_.lightsharkPort << std::endl;
 
-        struct sockaddr_in servaddr;
-
-        // Set lightshark endpoint address
-        memset(&servaddr, 0, sizeof(servaddr));
-
-        servaddr.sin_family    = AF_INET; // IPv4
-        servaddr.sin_addr.s_addr = inet_addr(config_.lightsharkHostIp.data());
-        servaddr.sin_port = htons(config_.lightsharkPort);
-
-        int len = sizeof(servaddr);
-        int n = 0;
-
-        if ((n = sendto(sockfd_, data, size, 0, (const struct sockaddr *) &servaddr, len)) < 0){
-            std::cerr << "sendto fail errno " << n << " " << errno << std::endl;
+        try {
+            net_.udp_socket->send_to(asio::buffer(data, size), net_.udp_ls_endpoint);
+        } catch(asio::system_error e){
+            std::cerr << "Error sendUdp: " << e.what() << std::endl;
         }
+
     }
 
     void LsProxy::start() {
@@ -300,50 +314,12 @@ namespace LsMcuRemote {
 
         try {
 
-            // Creating socket file descriptor
-            if ( (sockfd_ = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-                throw new std::runtime_error("socket creation failed");
-            }
+            initUdp();
 
-            //// set some socket options
-            // reuse port
-            int optval = 1;
-//            setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
-
-//            struct ip_mreq m;
-//            m.imr_interface.s_addr = inet_addr("10.0.0.148");
-//            m.imr_multiaddr.s_addr = inet_addr("224.0.0.1");
-//            setsockopt(sockfd_, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&m, sizeof(m));
-
-            // set recv timeout
-            struct timeval timeout;
-            timeout.tv_sec = 0;
-            timeout.tv_usec = 500000;
-            setsockopt(sockfd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-
-            struct sockaddr_in servaddr;
-            memset(&servaddr, 0, sizeof(servaddr));
-
-            // Filling server information
-            servaddr.sin_family    = AF_INET; // IPv4
-            servaddr.sin_addr.s_addr = INADDR_ANY;
-            servaddr.sin_port = htons(config_.localPort);
-
-            // Bind the socket with the server address
-            if (bind(sockfd_, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 ){
-                throw new std::runtime_error("bind failed");
-            }
-
-            udpReceiveThread_ = new std::thread(&LsProxy::runloopUdpReceiver, this);
+            runloopUdpReceiverThread_ = new std::thread(&LsProxy::runloopUdpReceiver, this);
 
         } catch (std::exception e) {
             state_ = State::Stopped;
-
-            if (sockfd_ != -1){
-                close(sockfd_);
-                sockfd_ = -1;
-            }
 
             std::cerr << "Error while starting: " << e.what() << "(Errno " << errno << ")" << std::endl;
 
@@ -358,7 +334,7 @@ namespace LsMcuRemote {
                 while(state_ == State::Starting)
                     std::this_thread::sleep_for(std::chrono::microseconds(10));
 
-                syncTimerThread_ = new std::thread(&LsProxy::runloopSync, this);
+                runloopSyncThread_ = new std::thread(&LsProxy::runloopSync, this);
             } catch (std::exception e){
                 stop();
 
@@ -374,15 +350,15 @@ namespace LsMcuRemote {
 
         state_ = State::Stopping;
 
-        if (udpReceiveThread_ != nullptr){
+        if (runloopUdpReceiverThread_ != nullptr){
 
-            if (syncTimerThread_ != nullptr){
-                syncTimerThread_->join();
-                delete syncTimerThread_;
+            if (runloopSyncThread_ != nullptr){
+                runloopSyncThread_->join();
+                delete runloopSyncThread_;
             }
 
-            udpReceiveThread_->join();
-            delete udpReceiveThread_;
+            runloopUdpReceiverThread_->join();
+            delete runloopUdpReceiverThread_;
         }
 
         state_ = State::Stopped;
@@ -438,7 +414,7 @@ namespace LsMcuRemote {
         }
 
         if (level < 0 || 255 < level){
-            throw new std::out_of_range("Level must be in[0,255]");
+            throw new std::invalid_argument("Level must be in[0,255]");
         }
 
         try {
@@ -462,7 +438,7 @@ namespace LsMcuRemote {
         }
 
         if (level < 0 || 255 < level){
-            throw new std::out_of_range("Level must be in[0,255]");
+            throw new std::invalid_argument("Level must be in[0,255]");
         }
 
         try {
@@ -499,7 +475,7 @@ namespace LsMcuRemote {
 
 
         if (page < kLsOscPageMin || kLsOscPageMax < page)
-            throw new std::out_of_range("page must be in [1,30], starting at 1!");
+            throw new std::invalid_argument("page must be in [1,30], starting at 1!");
 
         try {
             char buf[128];
@@ -663,7 +639,7 @@ namespace LsMcuRemote {
         }
 
         if (playback < 0 || kLsOscPlaybackCount < playback){
-            throw new std::out_of_range("Level must be in [0,29], starting at 0!");
+            throw new std::invalid_argument("Level must be in [0,29], starting at 0!");
         }
 
         try {
@@ -718,7 +694,7 @@ namespace LsMcuRemote {
         }
 
         if (playback < 0 || kLsOscPlaybackCount < playback){
-            throw new std::out_of_range("Level must be in [0,29], starting at 0!");
+            throw new std::invalid_argument("Level must be in [0,29], starting at 0!");
         }
 
 

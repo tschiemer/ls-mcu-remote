@@ -25,8 +25,9 @@
 #include <thread>
 
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+
+#include <asio/ts/buffer.hpp>
+#include <asio/ts/internet.hpp>
 
 #include <oscpp/server.hpp>
 
@@ -37,9 +38,14 @@ namespace LsMcuRemote {
 
     class LsProxy {
 
-        /**
-         *  Type declarations
-         */
+
+        private:
+
+            const int kUdpReceiveBufferSize = 2000;
+
+            /**
+             *  Type declarations
+             */
         public:
 
             enum class State : uint8_t {
@@ -63,7 +69,7 @@ namespace LsMcuRemote {
 
             struct Configuration {
 
-                std::string_view lightsharkHostIp = kLsOscLsDefaultIpStr;
+                std::string_view lightsharkHost = kLsOscLsDefaultIpStr;
                 uint16_t lightsharkPort = kLsOscLsDefaultIncomingUdpPort;
                 uint16_t localPort = kLsOscLsDefaultOutgoingUdpPort;
 
@@ -105,13 +111,6 @@ namespace LsMcuRemote {
 
             static constexpr std::chrono::milliseconds NoAutoSync = std::chrono::milliseconds (0);
 
-        private:
-
-            const int kUdpReceiveBufferSize = 2000;
-
-        private:
-            LsState lsState_;
-
 
         private:
 
@@ -119,10 +118,19 @@ namespace LsMcuRemote {
 
             Configuration config_;
 
-            std::thread * udpReceiveThread_ = nullptr;
-            std::thread * syncTimerThread_ = nullptr;
+            LsState lsState_;
 
-            int sockfd_ = -1;
+            std::thread * runloopUdpReceiverThread_ = nullptr;
+            std::thread * runloopSyncThread_ = nullptr;
+
+            struct {
+                asio::io_context io_context;
+
+                asio::ip::udp::socket * udp_socket = nullptr;
+                asio::ip::udp::endpoint udp_ls_endpoint;
+
+                asio::ip::tcp::socket * tcp_socket;
+            } net_;
 
         public:
 
@@ -136,9 +144,13 @@ namespace LsMcuRemote {
 
             void runloopUdpReceiver();
 
-            void handleOscPacket(OSCPP::Server::Packet packet);
+            void initUdp();
+            void deinitUdp();
 
             void sendUdp(void * data, size_t len);
+
+            void handleOscPacket(OSCPP::Server::Packet packet);
+
 
         public:
 

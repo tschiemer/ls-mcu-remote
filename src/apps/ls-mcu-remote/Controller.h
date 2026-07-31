@@ -299,11 +299,11 @@ namespace LsMcuRemote {
 
 
                     struct Lightshark_st {
-                        std::string ip = kLsOscLsDefaultIpStr;
+                        std::string host = kLsOscLsDefaultIpStr;
                         uint16_t port = kLsOscLsDefaultIncomingUdpPort;
                         uint16_t remotePort = kLsOscLsDefaultOutgoingUdpPort;
                         int syncIntervalMs = 100;
-                        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(struct Lightshark_st, ip, port, remotePort, syncIntervalMs)
+                        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(struct Lightshark_st, host, port, remotePort, syncIntervalMs)
                     } lightshark;
 
                     MidiDevice::BankLayoutSet banks;

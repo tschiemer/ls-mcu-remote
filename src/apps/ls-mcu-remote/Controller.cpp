@@ -1075,7 +1075,7 @@ namespace LsMcuRemote {
     void Controller::initLsProxy(){
 
         lsProxy_.configure({
-           .lightsharkHostIp = data_.lightshark.ip,
+           .lightsharkHost = data_.lightshark.host,
            .lightsharkPort = data_.lightshark.port,
            .localPort = data_.lightshark.remotePort,
             .syncInterval = std::chrono::milliseconds(data_.lightshark.syncIntervalMs),
