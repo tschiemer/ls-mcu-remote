@@ -80,9 +80,21 @@ Likely you'll have to change the IP address of the lightshark device in your net
 "lightshark": {
     "ip": "10.0.0.10",
     "port": 8000,
-    "remotePort": 9000
+    "remotePort": 9000,
+    "syncIntervalMs": 100
   }
 ```
+***Option: `syncIntervalMs`***
+
+Defines the interval in milliseconds when sync requests are sent to lightshark.
+
+To give a sense of meaningful feedback a lower value is meaningful.
+
+But be aware, that lower values also mean that the complete state of lightshark is transmitted over the network at this interval creating more traffic.
+
+If `syncIntervalMs = 0` then there is no automatic sync. You could use the button function `sync` instead, if you want.
+
+
 
 **Banks**
 
@@ -526,6 +538,7 @@ Please note that all (or most) buttons with assigned functions will visually res
 | nextBank          |                                                                                                                                                                                                                                            |
 | previousBank      |                                                                                                                                                                                                                                            |
 | selectBank        | Index of bank to go to. ill memorize which was the last bank, if already at selected bank, will go to last. (useful to have a button to go to a master layer)                                                                              |
+| sync              | Sends sync request to lightshark (only meaningful if automatic sync is disabled)                                                                                                                                                           |
 
 ### Devices
 

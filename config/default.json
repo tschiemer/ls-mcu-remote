@@ -2,7 +2,8 @@
   "lightshark": {
     "ip": "10.0.0.10",
     "port": 8000,
-    "remotePort": 9000
+    "remotePort": 9000,
+    "syncIntervalMs": 100
   },
   "banks": [
     ["pb1","pb2","pb3","pb4","pb5","pb6","pb7","pb8","gm"],

@@ -111,6 +111,7 @@ namespace LsMcuRemote {
                         BFNextBank,
                         BFPreviousBank,
                         BFSelectBank, // requires target
+                        BFSync
                     };
 
                     enum EncoderFunction {
@@ -301,7 +302,8 @@ namespace LsMcuRemote {
                         std::string ip = kLsOscLsDefaultIpStr;
                         uint16_t port = kLsOscLsDefaultIncomingUdpPort;
                         uint16_t remotePort = kLsOscLsDefaultOutgoingUdpPort;
-                        NLOHMANN_DEFINE_TYPE_INTRUSIVE(struct Lightshark_st, ip, port, remotePort)
+                        int syncIntervalMs = 100;
+                        NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(struct Lightshark_st, ip, port, remotePort, syncIntervalMs)
                     } lightshark;
 
                     MidiDevice::BankLayoutSet banks;
@@ -365,14 +367,6 @@ namespace LsMcuRemote {
         protected:
 
 
-//            static inline MCU::fader pid2fader(MidiDevice::PlaybackId pid){
-//                return static_cast<MCU::fader>(libremidi::to_underlying(pid) - libremidi::to_underlying(MidiDevice::PlaybackId::PIPb1));
-//            }
-//
-//            static inline MidiDevice::PlaybackId ls2pid(int i){
-//                return static_cast<MidiDevice::PlaybackId>(i);
-//            }
-
             void initLsProxy();
             void deinitLsProxy();
 
@@ -384,9 +378,6 @@ namespace LsMcuRemote {
 
 
         public:
-
-//            Controller();
-//            ~Controller();
 
             void initFromConfig(const char filepath[]);
 
@@ -489,7 +480,8 @@ namespace LsMcuRemote {
 
         {Controller::MidiDevice::BFNextBank, "nextBank"},
         {Controller::MidiDevice::BFPreviousBank, "previousBank"},
-        {Controller::MidiDevice::BFSelectBank, "selectBank"}
+        {Controller::MidiDevice::BFSelectBank, "selectBank"},
+        {Controller::MidiDevice::BFSync, "sync"}
 
     })
 

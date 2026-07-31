@@ -1078,8 +1078,7 @@ namespace LsMcuRemote {
            .lightsharkHostIp = data_.lightshark.ip,
            .lightsharkPort = data_.lightshark.port,
            .localPort = data_.lightshark.remotePort,
-//                .syncInterval = LsProxy::NoAutoSync,
-            .syncInterval = std::chrono::milliseconds(100),
+            .syncInterval = std::chrono::milliseconds(data_.lightshark.syncIntervalMs),
            .onGrandmasterSync = [&](PlaybackLevel_t level){
                if (state_ != State::Running)
                    return;
@@ -1363,10 +1362,11 @@ namespace LsMcuRemote {
         }
         data_ = j;
 
+        if (data_.lightshark.syncIntervalMs < 0)
+            throw new std::invalid_argument("Invalid sync interval, must be >= 0");
+
         if (data_.devices.size() == 0)
             throw new std::invalid_argument("at least one device needed in configuration");
-
-        j = data_;
 
         for(auto & [portName, midiDevice] : data_.devices){
             if (midiDevice.vpots.size() != 8)
@@ -1376,7 +1376,7 @@ namespace LsMcuRemote {
                 throw new std::invalid_argument("pb bank offset higher than actual bank count");
         }
 
-
+//        j = data_;
 //        std::cout << j << std::endl;
 
     }
@@ -1751,13 +1751,16 @@ namespace LsMcuRemote {
                     changeBank(-1);
                 return true;
             case MidiDevice::BFSelectBank:
-                if (action.target == MidiDevice::ButtonAction::kNoTarget)
-                    throw new std::invalid_argument("selectBank action must have a valid target");
+//                if (action.target == MidiDevice::ButtonAction::kNoTarget)
+//                    throw new std::invalid_argument("selectBank action must have a valid target");
                 // on release only
                 if (!pressed)
                     gotoBank(action.target);
                 return true;
 
+            case MidiDevice::BFSync:
+                lsProxy_.syncRequest();
+                return true;
             case MidiDevice::BFNone:
             default:
                 break;
