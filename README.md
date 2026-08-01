@@ -13,14 +13,10 @@ Pull requests for fixes or extensions generally welcome, bug reports ok but I ma
 
 https://github.com/tschiemer/ls-mcu-remote
 
-# Dependency Note: Awaiting library patch
+Tested devices:
+- Behringer X-TOUCH Extender
 
-Some pull request for the used library libremidi is still pending.
-
-In this code version some local changes were used not available here.
-
-In Effect: **this source code likely won't quite work for you (yet)** and will have to be fixed up a bit after the [pull request](https://github.com/celtera/libremidi/pull/235) has been merged.
-
+----
 
 **Table of Contents**
 
@@ -36,6 +32,7 @@ In Effect: **this source code likely won't quite work for you (yet)** and will h
 - [Third Party Libraries](#third-party-libraries)
 - [License](#license)
 
+---
 
 ## Using  
 
@@ -590,6 +587,18 @@ The fields of a device object are as follows:
 | buttonLayer         | Change this devices button layer to previous or next                              |
 
 ## Building
+
+---
+***Dependency Note: Awaiting library patch***
+
+Some pull request for the used library libremidi is still pending.
+
+In this code version some local changes were used not available here.
+
+In Effect: **this source code likely won't quite work for you (yet)** and will have to be fixed up a bit after the [pull request](https://github.com/celtera/libremidi/pull/235) has been merged.
+
+---
+
 
 Building the project standalone should be straightforward using cmake.
 
