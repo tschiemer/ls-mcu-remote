@@ -159,7 +159,6 @@ namespace LsMcuRemote {
 
         for(int i = 0; i < vpots.size(); i++)
             encoderFunctionLUT_[vpots[i]] = i;
-
     }
 
     void Controller::MidiDevice::start(){
@@ -170,7 +169,20 @@ namespace LsMcuRemote {
 
         mcuRef_->start();
 
+
         clearAllButtons();
+
+        updateTrackColors();
+
+
+        updateVPotLcd();
+
+        updatePbLcd();
+        updatePbLevels();
+
+        updateVPotLeds();
+
+        setActiveButtons();
 
     }
 
@@ -185,17 +197,7 @@ namespace LsMcuRemote {
 
 
 
-        // reset LCD
-//        char lcd[113];
-//
-//        std::memset(lcd, sizeof(lcd), ' ');
-//
-//        lcd[sizeof(lcd)-1];
-//
-//        mcuRef_->update_lcd(lcd, 0);
-//
-//        mcuRef_->update_lcd(lcd, 0);
-
+        clearAllButtons();
 
         updateTrackColors();
 
@@ -208,7 +210,6 @@ namespace LsMcuRemote {
         updateVPotLeds();
 
         setActiveButtons();
-
     }
 
 
@@ -389,7 +390,7 @@ namespace LsMcuRemote {
                 break;
         }
 
-//        std::cerr << "VPot " << i << " LCD: " << lcd << std::endl;
+//        std::cerr << "VPot " << i << "(mode " << (int)vpots[i] << ") LCD: " << lcd << std::endl;
 
         mcuRef_->update_lcd(lcd, i*7);
     }
@@ -1164,6 +1165,7 @@ namespace LsMcuRemote {
 
             // midi in port
             midiDevice.midiInRef_ = new libremidi::midi_in{{
+                .ignore_sysex = false,
                  .on_message = [&](const libremidi::message& message) {
 
 //                     std::cerr << "in " << message.size() << std::endl;
